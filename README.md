@@ -9,6 +9,9 @@ When installing a new package, jarvis-pkg will build all packages not already in
 on the system from source by default. This minimizes the assumption of root privileges
 without discarding the software already on the system.
 
+Users can register externally-built libraries or modulefiles to allow jarvis-pkg to take
+full advantage of the software already installed on the system.
+
 ## Dependencies
 
 * jarvis-cd

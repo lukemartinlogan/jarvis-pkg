@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+"""
+USAGE:
+
+jpkg install pkg_name@version variant=a variant=b --with-variant ^ dep_name variant@version = a ^ dep_name ...
+jpkg install [--force-scrath, --prefer-scratch, --prefer-sys, --force-sys]
+"""
+
 from jarvis_cd.jarvis_manager import JarvisManager
 import argparse
 from enum import Enum

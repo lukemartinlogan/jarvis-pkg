@@ -1,0 +1,64 @@
+#rep,chars,strs
+ALIASES:
+  text:
+    match: "[nondigit][withdigit]"
+    nondigit:
+      rep:
+        min: 1
+        chars:
+          - range: ["a","z"]
+          - range: ["A","Z"]
+          - [".", "_"]
+    withdigit:
+      match:
+        rep:
+          min: 1
+          chars:
+            - range: [ "a","z" ]
+            - range: [ "A","Z" ]
+            - range: [ "0", "9" ]
+            - [ ".", "_" ]
+  sep:
+    match: ["@", "^", "%", "=", "+", "-"]
+  spaces:
+    match:
+      rep:
+        chars: [" "]
+        min: 1
+LEX:
+  tokens:
+    match: "[text][sep][text]"
+  space:
+    match:
+      - "[spaces][text]"
+      - "[text][spaces]"
+    output: "[text]"
+PARSE:
+  pkg_name:
+    match: "[text]"
+    position: 0
+  specific_version:
+    match: "[lhs]@[version]"
+    lhs: "[text]"
+    version: "[text]"
+    errors:
+      - match: "[lhs]@"
+        msg: "Expected a version"
+      - match: "[!lhs]@[all]"
+        msg: "Expected the left-hand side to be either a version or regular text"
+  build_dep:
+    match: "[lhs]%[rhs]"
+    lhs: "[text]"
+    rhs: "[text]"
+  runtime_dep:
+    match: "[lhs]^[rhs]"
+    lhs: "[all]"
+    rhs: "[all]"
+  variant_true:
+    match: "+[text]"
+  variant_false:
+    match:
+      - "-[text]"
+      - "+[text]"
+  variant_set:
+    match: "[text]=[text]"
