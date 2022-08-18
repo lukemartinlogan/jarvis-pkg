@@ -82,8 +82,7 @@ class DependencyGraph:
         all_env = Env()
         cycle_set = set()
         self._PackageInstallSchema(self.pkg_query, runtime_env, all_env, cycle_set)
-        tolist = [0]*len(all_env.final_env)
-        for key,val in all_env.final_env.items():
-            tolist[val.order] = val
-        tolist = list(reversed(tolist))
+        tolist = list(all_env.final_env.values())
+        tolist.sort(key=lambda x: x.order)
+        to_list = list(reversed(tolist))
         return tolist

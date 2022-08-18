@@ -30,10 +30,10 @@ class PackageQuery:
         if pkg_query.pkg_query['version_range'] is None:
             return True
         if self.pkg_query['version_range'] is None:
-            self.pkg_query['version_range'] = pkg_query['version_range']
+            self.pkg_query['version_range'] = pkg_query.pkg_query['version_range']
             return True
-        vmin = max([self.pkg_query['version_range'][0], pkg_query['version_range'][0]])
-        vmax = max([self.pkg_query['version_range'][1], pkg_query['version_range'][1]])
+        vmin = max([self.pkg_query['version_range'][0], pkg_query.pkg_query['version_range'][0]])
+        vmax = max([self.pkg_query['version_range'][1], pkg_query.pkg_query['version_range'][1]])
         if vmin <= vmax:
             self.pkg_query['version_range'] = [vmin, vmax]
             return True

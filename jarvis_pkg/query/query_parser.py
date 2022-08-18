@@ -56,9 +56,9 @@ class QueryParser:
         next_tok = toks[i+1]
         if tok == '@':
             if pkg_query.GetVersionRange() is None:
-                pkg_query.SetVersion(next_tok)
+                pkg_query.SetVersionRange(next_tok)
             else:
-                pkg_query.GetBuildDependency(self.last_build_dep).SetVersion(next_tok)
+                pkg_query.GetBuildDependency(self.last_build_dep).SetVersionRange(next_tok)
         if tok == '%':
             self.last_build_dep = next_tok
             pkg_query.AddBuildDependency(PackageQuery(next_tok))
