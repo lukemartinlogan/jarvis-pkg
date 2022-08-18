@@ -16,13 +16,6 @@ class Version:
         version_tuple += [0]*(3 - len(version_tuple))
         return raw_version_tuple,version_tuple
 
-    def Matches(self, v):
-        for i in range(3):
-            if len(self.raw_version_tuple) > i:
-                if self.raw_version_tuple[i] != v.version_tuple[i]:
-                    return False
-        return True
-
     def __gt__(self, v2):
         cnt = min((len(self), len(v2)))
         for i in range(cnt):
@@ -71,4 +64,6 @@ class Version:
         return self.version_string
 
     def __len__(self):
+        if self.raw_version_tuple is None:
+            return 0
         return len(self.raw_version_tuple)

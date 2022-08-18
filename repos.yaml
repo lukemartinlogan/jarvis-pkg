@@ -1,2 +1,12 @@
 REPOS:
-  - ${JARVIS_ROOT}/builtin
+  - path: ${JARVIS_PKG_ROOT}/jpkg_builtin
+    pkgs:
+      - beegfs
+      - daos
+      - gcc
+      - io500
+      - mpich
+      - orangefs
+      - scons
+      - python
+      - git

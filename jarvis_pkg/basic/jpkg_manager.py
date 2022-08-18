@@ -1,5 +1,7 @@
-import os, inspect, pathlib
+import os, inspect, pathlib, sys
 from jarvis_cd import *
+from jarvis_cd.serialize.yaml_file import YAMLFile
+from jarvis_cd.util.expand_paths import ExpandPaths
 
 class JpkgManager:
     instance_ = None
@@ -12,22 +14,23 @@ class JpkgManager:
 
     def __init__(self):
         self.jpkg_root = os.path.dirname(os.path.dirname(pathlib.Path(__file__).parent.resolve()))
-        self.repos = YAMLFile(os.path.join(self.jpkg_root, 'repos.yaml')).Load()
-        ExpandPaths(self.repos)
+        self.repos = YAMLFile(os.path.join(self.jpkg_root, 'repos.yaml')).Load()['REPOS']
+        self.repos = ExpandPaths(self.repos).Run()
         self.installer_root = os.path.join(self.jpkg_root, 'jpkg_installers')
 
-    def _PackagePathTuple(self, package_name):
-        for namespace in os.listdir(self.repo_root):
-            ns_pkgs = os.path.join(self.repo_root, namespace)
-            for ns_pkg_name in os.listdir(ns_pkgs):
-                if package_name == ns_pkg_name:
-                    return (self.jpkg_root, 'jpkg_repos', namespace, ns_pkg_name)
-        return None
-
     def _PackageImport(self, pkg_name):
-        path_tuple = self._PackagePathTuple(pkg_name)
-        if path_tuple is None:
+        path = None
+        import_str = None
+        pkg_name = ToSnakeCase(pkg_name)
+        for ns in self.repos:
+            if pkg_name in ns['pkgs']:
+                ns_id = os.path.basename(ns['path'])
+                import_str = f"{ns_id}.{pkg_name}"
+                path = os.path.join(ns['path'], pkg_name)
+        if path is None:
             return None
-        import_str = '.'.join(path_tuple[1:])
         class_name = ToCamelCase(pkg_name)
-        return __import__(f"{import_str}.package", fromlist=[class_name])
+        sys.path.insert(0,path)
+        module = __import__(f"{import_str}.package", fromlist=[class_name])
+        sys.path.pop(0)
+        return getattr(module, class_name)

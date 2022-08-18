@@ -15,8 +15,9 @@ class CMakeNode(ExecNode):
         super().__init__(cmds, shell=True)
 
 class CMakePackage(Package):
-    phases = ['cmake', 'build', 'install']
-    depends_on('cmake')
+    def __init__(self):
+        self.phases = ['cmake', 'build', 'install']
+        self.depends_on('cmake')
 
     def cmake_args(self, spec, prefix):
         return []

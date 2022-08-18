@@ -1,3 +1,4 @@
 from jarvis_pkg.query.dependencies import DependencyGraph
 
-deps = DependencyGraph("daos")
+deps = DependencyGraph("daos").Build()
+print(deps)

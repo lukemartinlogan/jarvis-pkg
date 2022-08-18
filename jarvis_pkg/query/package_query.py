@@ -27,6 +27,11 @@ class PackageQuery:
         return self.pkg_query['version_range']
 
     def IntersectVersionRange(self, pkg_query):
+        if pkg_query.pkg_query['version_range'] is None:
+            return True
+        if self.pkg_query['version_range'] is None:
+            self.pkg_query['version_range'] = pkg_query['version_range']
+            return True
         vmin = max([self.pkg_query['version_range'][0], pkg_query['version_range'][0]])
         vmax = max([self.pkg_query['version_range'][1], pkg_query['version_range'][1]])
         if vmin <= vmax:
@@ -37,7 +42,7 @@ class PackageQuery:
             return False
 
     def IntersectVariants(self, pkg_query):
-        for variant,val in pkg_query['variants'].items():
+        for variant,val in pkg_query.pkg_query['variants'].items():
             variants = self.pkg_query['variants']
             if variant in variants and variants[variant] != val:
                 return False
@@ -55,6 +60,9 @@ class PackageQuery:
 
     def SetVariant(self, key, val):
         self.pkg_query['variants'][key] = val
+
+    def GetName(self):
+        return self.pkg_query['pkg_name']
 
     def __hash__(self):
         return hash(str(self.pkg_query))

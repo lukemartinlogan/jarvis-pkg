@@ -1,9 +1,9 @@
 import setuptools
 
 setuptools.setup(
-    name="jarvis_pkg",
+    name="jarvis-pkg",
     packages=setuptools.find_packages(),
-    scripts=['bin/jarvis_pkg'],
+    scripts=['bin/jarvis-pkg'],
     version="0.0.1",
     author="Luke Logan",
     author_email="llogan@hawk.iit.edu",

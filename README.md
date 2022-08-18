@@ -36,3 +36,8 @@ jpkg list [pkg-name or class-name]
 jpkg find [pkg-name or class-name]
 jpkg load [pkg-name]
 ```
+
+Todo: jarvis-pkg installation pipeline
+```
+export JARVIS_PKG_ROOT=`pwd`
+```

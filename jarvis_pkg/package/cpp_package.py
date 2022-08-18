@@ -1,5 +1,4 @@
 
-from jarvis_pkg.package.package import Package
-
 class CppPackage:
-    depends_on('cpp_compiler')
+    def __init__(self):
+        self.depends_on('cpp_compiler')

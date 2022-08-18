@@ -3,6 +3,7 @@ from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.query.query_parser import QueryParser
 from jarvis_pkg.query.package_query import PackageQuery
 from jarvis_pkg.basic.exception import Error,ErrorCode
+import os,inspect
 
 class Env:
     def __init__(self):
@@ -39,12 +40,13 @@ class Env:
 class DependencyGraph:
     def __init__(self, pkg_queries):
         if isinstance(pkg_queries, str):
-            pkg_queries = QueryParser.Parse(pkg_queries)
+            pkg_queries = QueryParser().Parse(pkg_queries)
         self.pkg_queries = pkg_queries
         self.pkg_query = pkg_queries[0]
         self.jpkg_manager = JpkgManager.GetInstance()
 
     def _PackageInstallSchema(self, pkg_query, runtime_env, all_env, cycle_set, order = 0, buildtime=False):
+        #print(pkg_query)
         pkg_name = pkg_query.GetName()
         pkg_klass = self.jpkg_manager._PackageImport(pkg_name)
         if pkg_klass is None:
@@ -62,13 +64,14 @@ class DependencyGraph:
         for dep_pkg_query in run_deps:
             self._PackageInstallSchema(dep_pkg_query, runtime_env, all_env, cycle_set, order=order + 1)
         for dep_pkg_query in build_deps:
+            print(dep_pkg_query)
             self._PackageInstallSchema(dep_pkg_query, runtime_env, all_env, cycle_set, order=order + 1, buildtime=True)
         pkg_query._set_order(order)
 
         #Check for buildtime and runtime conflicts
         run_deps += [pkg_query]
         runtime_env.Load(run_deps + build_deps)
-        runtime_env.Unloa(build_deps)
+        runtime_env.Unload(build_deps)
         if buildtime:
             runtime_env.Unload(run_deps)
         all_env.Load(run_deps+build_deps)
@@ -79,3 +82,8 @@ class DependencyGraph:
         all_env = Env()
         cycle_set = set()
         self._PackageInstallSchema(self.pkg_query, runtime_env, all_env, cycle_set)
+        tolist = [0]*len(all_env.final_env)
+        for key,val in all_env.final_env.items():
+            tolist[val.order] = val
+        tolist = list(reversed(tolist))
+        return tolist

@@ -15,8 +15,10 @@ class CMakeNode(ExecNode):
         super().__init__(cmds, shell=True)
 
 class AutotoolsPackage(Package):
-    phases = ['autoreconf', 'autogen', 'configure', 'build', 'install']
-    depends_on('make')
+
+    def __init__(self):
+        self.phases = ['autoreconf', 'autogen', 'configure', 'build', 'install']
+        self.depends_on('make')
 
     def autoreconf(self):
         cmd = f"autoreconf -ivf"
