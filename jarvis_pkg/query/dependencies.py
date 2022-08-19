@@ -67,6 +67,7 @@ class DependencyGraph:
             print(dep_pkg_query)
             self._PackageInstallSchema(dep_pkg_query, runtime_env, all_env, cycle_set, order=order + 1, buildtime=True)
         pkg_query._set_order(order)
+        pkg_query._set_pkg(pkg)
 
         #Check for buildtime and runtime conflicts
         run_deps += [pkg_query]
@@ -82,7 +83,17 @@ class DependencyGraph:
         all_env = Env()
         cycle_set = set()
         self._PackageInstallSchema(self.pkg_query, runtime_env, all_env, cycle_set)
-        tolist = list(all_env.final_env.values())
-        tolist.sort(key=lambda x: x.order)
-        to_list = list(reversed(tolist))
-        return tolist
+        install_schema = list(all_env.final_env.values())
+        install_schema.sort(key=lambda x: x.order)
+        install_schema = list(reversed(install_schema))
+        return install_schema
+
+    def Install(self, install_schema):
+        #Create the installation+src directory
+
+        #Install pkg
+        for pkg_query in install_schema:
+            pkg = pkg_query._get_pkg()
+            for phase_name in pkg.phases:
+                phase = getattr(pkg, phase_name)
+                phase(pkg, pkg_query)

@@ -17,6 +17,10 @@ class PackageQuery:
         self.order = max(self.order, order)
     def _get_order(self):
         return self.order
+    def _set_pkg(self, pkg):
+        self.pkg = pkg
+    def _get_pkg(self, pkg):
+        return pkg
 
     def SetVersionRange(self, version):
         if isinstance(version, str):
