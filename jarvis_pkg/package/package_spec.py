@@ -1,4 +1,5 @@
 from jarvis_pkg.query.version import Version
+import json
 
 class PackageSpec:
     def __init__(self, pkg_name=None):
@@ -7,9 +8,10 @@ class PackageSpec:
             'version_range': None,
             'variants': {},
             'build_deps': {},
-            'runtime_deps': {}
+            'run_deps': {}
         }
         self.order = 0
+        self.pkg = None
 
     def _set_order(self, order):
         self.order = order
@@ -17,6 +19,10 @@ class PackageSpec:
         self.order = max(self.order, order)
     def _get_order(self):
         return self.order
+    def _set_pkg(self, pkg):
+       self.pkg = pkg
+    def _get_pkg(self):
+        return self.pkg
 
     def SetVersionRange(self, version):
         if isinstance(version, str):
@@ -26,14 +32,14 @@ class PackageSpec:
     def GetVersionRange(self):
         return self.spec['version_range']
 
-    def IntersectVersionRange(self, pkg_query):
-        if pkg_query.spec['version_range'] is None:
+    def IntersectVersionRange(self, pkg_spec):
+        if pkg_spec.spec['version_range'] is None:
             return True
         if self.spec['version_range'] is None:
-            self.spec['version_range'] = pkg_query.spec['version_range']
+            self.spec['version_range'] = pkg_spec.spec['version_range']
             return True
-        vmin = max([self.spec['version_range'][0], pkg_query.spec['version_range'][0]])
-        vmax = max([self.spec['version_range'][1], pkg_query.spec['version_range'][1]])
+        vmin = max([self.spec['version_range'][0], pkg_spec.spec['version_range'][0]])
+        vmax = max([self.spec['version_range'][1], pkg_spec.spec['version_range'][1]])
         if vmin <= vmax:
             self.spec['version_range'] = [vmin, vmax]
             return True
@@ -41,8 +47,8 @@ class PackageSpec:
             self.spec['version_range'] = None
             return False
 
-    def IntersectVariants(self, pkg_query):
-        for variant,val in pkg_query.spec['variants'].items():
+    def IntersectVariants(self, pkg_spec):
+        for variant,val in pkg_spec.spec['variants'].items():
             variants = self.spec['variants']
             if variant in variants and variants[variant] != val:
                 return False
@@ -56,7 +62,13 @@ class PackageSpec:
         return self.spec['build_deps'][pkg_name]
 
     def AddRuntimeDependency(self, pkg_dep):
-        self.spec['runtime_deps'][pkg_dep.GetName()] = pkg_dep
+        self.spec['run_deps'][pkg_dep.GetName()] = pkg_dep
+
+    def GetBuildDeps(self):
+        return self.spec['build_deps']
+
+    def GetRunDeps(self):
+        return self.spec['run_deps']
 
     def SetVariant(self, key, val):
         self.spec['variants'][key] = val
@@ -72,3 +84,6 @@ class PackageSpec:
 
     def __repr__(self):
         return str(self.spec)
+
+    def dict(self):
+        return self.spec

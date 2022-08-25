@@ -26,6 +26,19 @@ class Package(ABC):
         self.pip = None
         self.npm = None
 
+    """
+    Package spec querying
+    """
+    def GetRunDeps(self, pkg_spec):
+        return self.dependencies + list(pkg_spec.GetRunDeps().values())
+
+    def GetBuildDeps(self, pkg_spec):
+        return self.build_dependencies + list(pkg_spec.GetBuildDeps().values())
+
+    """
+    Package Initialization
+    """
+
     def version(self, version_string, tag=None, help="", url=None,
             git=None, branch=None, commit=None, submodules=False,
             apt=None, yum=None, dnf=None, zypper=None, pacman=None, repo_url=None, gpg=None,
@@ -58,36 +71,19 @@ class Package(ABC):
         if version_info['pip'] is not None:
             self.depends_on('python')
 
-    def depends_on(self, pkg_query, when=None, time='runtime'):
-        if isinstance(pkg_query, str):
-            pkg_query = QueryParser().Parse(pkg_query)
+    def depends_on(self, pkg_spec, when=None, time='runtime'):
+        if isinstance(pkg_spec, str):
+            pkg_spec = QueryParser().Parse(pkg_spec)
         if time == 'runtime':
-            self.dependencies += pkg_query
+            self.dependencies += pkg_spec
         else:
-            self.build_dependencies += pkg_query
+            self.build_dependencies += pkg_spec
 
     def patch(self, path, when=None):
         self.patches.append(path)
 
     def conflict(self, query_a, query_b):
         self.conflicts.append(query_a)
-
-    def GetRuntimeDependencies(self, pkg_query):
-        return self.dependencies
-
-    def GetBuildDependencies(self, pkg_query):
-        return self.build_dependencies
-
-    def GetLatestVersion(self, version_string):
-        v = Version(version_string)
-        latest = max([exact_v for exact_v in self.versions if v.Matches(exact_v)])
-        return latest
-
-    def Versions(self):
-        return
-
-    def Variants(self):
-        return
 
     def setup_run_environment(self, env):
         env.prepend_path('CPATH', os.path.join(self.prefix, 'include'))
