@@ -1,6 +1,6 @@
 from jarvis_pkg.basic.jpkg_manager import *
 from jarvis_pkg.basic.exception import *
-from jarvis_pkg.query.package_query import *
+from jarvis_pkg.query.package_spec import *
 from jarvis_pkg.query.version import *
 from jarvis_pkg.query.query_parser import *
 from jarvis_pkg.query.dependencies import *

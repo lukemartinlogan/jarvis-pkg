@@ -100,3 +100,7 @@ class Package(ABC):
 
     def Uninstall(self):
         return
+
+    def _register_repo_rhel(self, repo_url, gpg):
+        self.download(repo_url, 'beegfs.repo')
+        self.copy('beegfs.repo', '/etc/yum/repos.d', sudo=True)

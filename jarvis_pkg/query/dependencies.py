@@ -1,7 +1,7 @@
 from jarvis_pkg.package.package import Package
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.query.query_parser import QueryParser
-from jarvis_pkg.query.package_query import PackageQuery
+from jarvis_pkg.query.package_spec import PackageSpec
 from jarvis_pkg.basic.exception import Error,ErrorCode
 import os,inspect
 
@@ -15,7 +15,7 @@ class Env:
             pkg_name = pkg_query.GetName()
             if pkg_name not in self.env:
                 self.env[pkg_name] = 0
-                self.final_env[pkg_name] = PackageQuery(pkg_name)
+                self.final_env[pkg_name] = PackageSpec(pkg_name)
 
             #Check if the pkg_query version conflicts with the currently one
             if not self.final_env[pkg_name].IntersectVersionRange(pkg_query):
