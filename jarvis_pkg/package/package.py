@@ -1,9 +1,9 @@
 from jarvis_cd import *
-from jarvis_pkg import Error, ErrorCode
+from jarvis_pkg.basic.exception import Error, ErrorCode
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.basic.version import Version
 from jarvis_pkg.basic.query_parser import QueryParser
-import json
+from abc import ABC,abstractmethod
 
 class Package(ABC):
     def __init__(self):
@@ -22,6 +22,7 @@ class Package(ABC):
         self.conflicts = []  # [(condition, condition, msg)]
         self.jpkg_manager = JpkgManager.GetInstance()
 
+        self.is_null_ = None
         self.version_ = None
         self.patches_ = None # [patches]
         self.build_deps_ = None # [pkg]
@@ -49,6 +50,21 @@ class Package(ABC):
         self.variant('prefer_scratch', type=bool, default=True,
                      msg="If a package is not installed, whether or not to build from source or"
                          "install using a different package manager")
+        self._Init(self)
+        self._InitDynamic()
+
+    def RecurseCopy(self):
+        pkg = Package()
+        pkg.SetName(self.GetName())
+        pkg.SetClass(self.GetClass())
+        self._Init(pkg)
+        return pkg
+
+    @staticmethod
+    def _Init(self):
+        pass
+    def _InitDynamic(self):
+        pass
 
     """
     Package Command Line
@@ -75,10 +91,10 @@ class Package(ABC):
         self.version_set = {v_info['version'] for v_info in self.versions}
 
     def AddBuildDep(self, pkg):
-        pass
+        self.build_deps[pkg.GetClass()].append((pkg, None))
 
-    def AddRunDep(self, ):
-        pass
+    def AddRunDep(self, pkg):
+        self.run_deps[pkg.GetClass()].append((pkg, None))
 
     def GetBuildDeps(self):
         return self.all_build_deps
@@ -86,8 +102,8 @@ class Package(ABC):
     def GetRunDeps(self):
         return self.all_run_deps
 
-    def AddVariant(self, key, value):
-        pass
+    def SetVariant(self, key, value):
+        self.variants[key] = value
 
     def _intersect_deps(self, pkg_deps, self_deps):
         for pkg_name, pkg_row in pkg_deps.items():
@@ -95,35 +111,29 @@ class Package(ABC):
                 self_deps[pkg.GetClass()][i][0].Intersect(pkg)
 
     def Intersect(self, pkg):
+        if self.is_null_ is not None:
+            return self
         self.versions = [v_info for v_info in self.versions if v_info['version'] in self.version_set and v_info['version'] in pkg.version_set]
+        if len(self.versions) == 0:
+            self.is_null_ = Error(ErrorCode.CONFLICTING_VERSIONS).format(self.GetName())
+            return self
         self.version_set = {v_info['version'] for v_info in self.versions}
         self._intersect_deps(pkg.build_deps, self.build_deps)
         self._intersect_deps(pkg.run_deps, self.run_deps)
         for key,val in pkg.variants.items():
             if key in self.variants:
                 if self.variants[key] != val:
-                    self.versions = []
-                    return
+                    self.is_null_ = Error(ErrorCode.CONFLICTING_VARIANTS).format(key, self.variants[key], val)
+                    return self
             else:
                 self.variants[key] = val
         return self
 
     def IsNull(self):
-        return len(self.versions) == 0
+        return self.is_null_ is not None
 
     def IsScratch(self, v_info):
         return v_info['git'] is None or v_info['url'] is None
-
-    def _check_condition(self, cur_env, condition):
-        if condition is None:
-            return True
-        if condition.GetClass() not in cur_env:
-            return False
-        pkg_set = cur_env[condition.GetClass()]['pkg_set']
-        for pkg in pkg_set:
-            if not pkg.copy().Intersect(condition).IsNull():
-                return True
-        return False
 
     def _find_pkg(self, cur_env, pkg_query):
         pkg_set = cur_env[pkg_query.GetClass()]['pkg_set']
@@ -136,7 +146,7 @@ class Package(ABC):
         new_deps = []
         for pkg_name, pkg_row in deps.items():
             for pkg, condition in pkg_row:
-                if self._check_condition(cur_env, condition):
+                if condition in cur_env:
                     new_deps.append(self._find_pkg(cur_env, pkg))
         return new_deps
 
@@ -163,8 +173,7 @@ class Package(ABC):
     def SolidifyDeps(self, cur_env):
         # Solidify dependencies
         self.version_ = self.versions[-1]
-        self.patches_ = [patch_info for patch_info, condition in self.patches if
-                        self._check_condition(cur_env, condition)]
+        self.patches_ = [patch_info for patch_info, condition in self.patches if condition in cur_env]
         self.build_deps_ = self._solidify_deps(cur_env, self.build_deps)
         self.run_deps_ = self._solidify_deps(cur_env, self.run_deps)
         self.FilterBuildDeps(self.build_deps_)
@@ -173,8 +182,8 @@ class Package(ABC):
 
         # Check conflicts
         for query_a, query_b, msg in self.conflicts:
-            p1 = self._check_condition(cur_env, query_a)
-            p2 = self._check_condition(cur_env, query_b)
+            p1 = query_a in cur_env
+            p2 = query_b in cur_env
             if p1 and p2:
                 raise Error(ErrorCode.CONFLICT).format(msg)
 
@@ -236,7 +245,7 @@ class Package(ABC):
         if pkg.GetClass() not in deps:
             deps[pkg.GetClass()] = []
         deps[pkg.GetClass()].append((pkg, when))
-        all_deps.append(pkg)
+        all_deps.append((pkg,when))
 
     def depends_on(self, pkg, when=None, time='runtime'):
         if isinstance(pkg, str):
@@ -315,11 +324,11 @@ class Package(ABC):
             print('VERSIONS:')
             for version_info in self.versions:
                 print(f"  {version_info['version']}")
-        if len(self.build_deps_):
+        if self.build_deps_ is not None and len(self.build_deps_):
             print('BUILD DEPS:')
             for pkg in self.build_deps_:
                 print(f"  {pkg.GetName()}@{pkg.version_['version']}")
-        if len(self.run_deps_):
+        if self.run_deps_ is not None and len(self.run_deps_):
             print('RUN DEPS:')
             for pkg in self.run_deps_:
                 print(f"  {pkg.GetName()}@{pkg.version_['version']}")

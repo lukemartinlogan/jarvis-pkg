@@ -31,7 +31,7 @@ class ErrorCode:
     MALFORMED_QUERY = {"id": 100, "msg": "Malformed install: {}"}
     UNKOWN_PACKAGE = {"id": 101, "msg": "Cannot find package {}"}
     CYCLIC_DEPENDENCY = {"id": 102, "msg": "{} depends on itself. Cyclic dependency"}
-    MULTIPLE_PACKAGE_VERSIONS_LOADED = {"id": 103, "msg": "Different version of {} were required for install, which is not allowed."}
+    CONFLICTING_VERSIONS = {"id": 103, "msg": "The installation requires multiple versions of {}"}
     CONFLICTING_VARIANTS = {"id": 104, "msg": "An installation candidate requires variant {} with both values {} and {}"}
     INVALID_VERSION_STRING = {"id": 105, "msg": "Invalid version string install: {}"}
     VERSION_SET_NOT_STRING = {"id": 106, "msg": "When setting version range, string notation required"}
