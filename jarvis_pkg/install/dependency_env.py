@@ -11,6 +11,9 @@ class DependencyEnvEntry:
         if conditions is not None:
             self.conditions += conditions
 
+    def GetName(self):
+        return self.pkg.GetClass()
+
 class DependencyEnvRow:
     def __init__(self):
         self.order = 0

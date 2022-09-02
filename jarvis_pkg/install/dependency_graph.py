@@ -31,11 +31,15 @@ class DependencyGraph:
             print(dep_row.GetName())
 
             """
-            Filter out different versions of the current package based on whether or not
-            parent branch was selected and the conditions met
+            Filter out different versions of the current package based on various conditions:
+            Whether or not the parent was selected and if the parent's conditions are met.
             """
             row_sub = []
             for dep_entry in row:
+                if dep_entry.GetName() == 'B':
+                    for c in dep_entry.conditions:
+                        c.print()
+                    exit()
                 rets = [c in final_env for c in dep_entry.conditions]
                 if not all(rets):
                     continue
@@ -92,7 +96,7 @@ class DependencyGraph:
             final_env.AddRow(final_pkg_set, order)
             for pkg in final_pkg_set:
                 pkg.SolidifyVersion()
-                pkg.print()
+                #pkg.print()
 
 
         """
