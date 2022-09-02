@@ -60,14 +60,17 @@ class D(Package):
 
     def _InitDynamic(self):
         b1 = B()
+        b1.SetVariant('test', 'test1')
         cond1 = self.RecurseCopy()
         cond1.SetVariant('test', 'test1')
 
         b2 = B()
+        b2.SetVariant('test', 'test2')
         cond2 = self.RecurseCopy()
         cond2.SetVariant('test', 'test2')
 
         b3 = B()
+        b3.SetVariant('test', 'test3')
         cond3 = self.RecurseCopy()
         cond3.SetVariant('test', 'test3')
 

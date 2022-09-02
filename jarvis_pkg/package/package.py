@@ -103,7 +103,9 @@ class Package(ABC):
         return self.all_run_deps
 
     def SetVariant(self, key, value):
-        self.variants[key] = value
+        if key not in self.variants:
+            self.variants[key] = self.default_variants.copy()
+        self.variants[key]['value'] = value
 
     def _intersect_deps(self, pkg_deps, self_deps):
         for pkg_name, pkg_row in pkg_deps.items():
@@ -122,7 +124,7 @@ class Package(ABC):
         self._intersect_deps(pkg.run_deps, self.run_deps)
         for key,val in pkg.variants.items():
             if key in self.variants:
-                if self.variants[key] != val:
+                if self.variants[key]['value'] != val['value']:
                     self.is_null_ = Error(ErrorCode.CONFLICTING_VARIANTS).format(key, self.variants[key], val)
                     return self
             else:
@@ -241,6 +243,15 @@ class Package(ABC):
         self.versions.append(version_info)
         self.version_set.add(version_info['version'])
 
+    def variant(self, name, default=None, type=None, choices=None, msg=None):
+        variant_info = {
+            'value': default,
+            'type': type,
+            'choices': choices,
+            'msg': msg
+        }
+        self.default_variants[name] = variant_info
+
     def _depends_on(self, pkg, when, deps, all_deps):
         if pkg.GetClass() not in deps:
             deps[pkg.GetClass()] = []
@@ -256,15 +267,6 @@ class Package(ABC):
             self._depends_on(pkg, when, self.run_deps, self.all_run_deps)
         else:
             self._depends_on(pkg, when, self.build_deps, self.all_build_deps)
-
-    def variant(self, name, default=None, type=None, choices=None, msg=None):
-        variant_info = {
-            'value': default,
-            'type': type,
-            'choices': choices,
-            'msg': msg
-        }
-        self.default_variants[name] = variant_info
 
     def patch(self, path, when=None):
         self.patches.append((path, when))
@@ -324,6 +326,10 @@ class Package(ABC):
             print('VERSIONS:')
             for version_info in self.versions:
                 print(f"  {version_info['version']}")
+        if len(self.variants):
+            print('VARIANTS:')
+            for key,val in self.variants.items():
+                print(f"  {key}: {val['value']}")
         if self.build_deps_ is not None and len(self.build_deps_):
             print('BUILD DEPS:')
             for pkg in self.build_deps_:
@@ -333,7 +339,3 @@ class Package(ABC):
             for pkg in self.run_deps_:
                 print(f"  {pkg.GetName()}@{pkg.version_['version']}")
             print()
-        if len(self.variants):
-            print('VARIANTS:')
-            for key,val in self.variants.items():
-                print(f"  {key}: {val['value']}")

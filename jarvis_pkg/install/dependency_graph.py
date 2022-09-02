@@ -13,10 +13,10 @@ class DependencyGraph:
             cycle_set.add(root_pkg.GetClass())
         else:
             raise Error(ErrorCode.CYCLIC_DEPENDENCY).format(root_pkg.GetClass())
-        for pkg,conditions in root_pkg.GetBuildDeps():
-            self._GetInstallEnvironment(pkg, env, order=order+1, build_dep=True*build_dep, parent=root_pkg, conditions=conditions)
-        for pkg,conditions in root_pkg.GetRunDeps():
-            self._GetInstallEnvironment(pkg, env, order=order+1, parent=root_pkg, conditions=conditions)
+        for dep_pkg,dep_conditions in root_pkg.GetBuildDeps():
+            self._GetInstallEnvironment(dep_pkg, env, order=order+1, build_dep=True*build_dep, parent=root_pkg, conditions=dep_conditions)
+        for dep_pkg,dep_conditions in root_pkg.GetRunDeps():
+            self._GetInstallEnvironment(dep_pkg, env, order=order+1, parent=root_pkg, conditions=dep_conditions)
         env.AddEntry(root_pkg, order, build_dep, parent, conditions)
 
     def Build(self, pkg_list):
@@ -28,7 +28,6 @@ class DependencyGraph:
         final_env = DependencyEnv()
         for dep_row in ordered_rows:
             row = dep_row.list()
-            print(dep_row.GetName())
 
             """
             Filter out different versions of the current package based on various conditions:
@@ -36,16 +35,13 @@ class DependencyGraph:
             """
             row_sub = []
             for dep_entry in row:
-                if dep_entry.GetName() == 'B':
-                    for c in dep_entry.conditions:
-                        c.print()
-                    exit()
                 rets = [c in final_env for c in dep_entry.conditions]
                 if not all(rets):
                     continue
                 row_sub.append(dep_entry)
             row = row_sub
             if len(row) == 0:
+                print("All conditions failed")
                 continue
             build_row = [dep_entry for dep_entry in row if dep_entry.is_build_dep]
             run_row = [dep_entry for dep_entry in row if not dep_entry.is_build_dep]
@@ -96,8 +92,6 @@ class DependencyGraph:
             final_env.AddRow(final_pkg_set, order)
             for pkg in final_pkg_set:
                 pkg.SolidifyVersion()
-                #pkg.print()
-
 
         """
         Create ordered list of packages to install

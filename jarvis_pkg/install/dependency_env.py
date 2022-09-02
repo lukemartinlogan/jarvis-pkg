@@ -59,7 +59,7 @@ class DependencyEnv:
         for dep_entry in self.nodes[condition.GetClass()].row:
             if not dep_entry.pkg.copy().Intersect(condition).IsNull():
                 return True
-        print(f"Condition {condition.variants} failed")
+        #print(f"Condition {condition.variants} failed")
         return False
 
     def __getitem__(self, pkg_name):
