@@ -27,8 +27,7 @@ class ErrorCode:
     """
     SUCCESS = {"id": 0, "msg": "SUCCESSFUL"}
 
-    #Query Parser
-    MALFORMED_QUERY = {"id": 100, "msg": "Malformed install: {}"}
+    # Dependency Graph
     UNKOWN_PACKAGE = {"id": 101, "msg": "Cannot find package {}"}
     CYCLIC_DEPENDENCY = {"id": 102, "msg": "{} depends on itself. Cyclic dependency"}
     CONFLICTING_VERSIONS = {"id": 103, "msg": "The installation requires multiple versions of {}"}
@@ -36,4 +35,9 @@ class ErrorCode:
     INVALID_VERSION_STRING = {"id": 105, "msg": "Invalid version string install: {}"}
     VERSION_SET_NOT_STRING = {"id": 106, "msg": "When setting version range, string notation required"}
     CONFLICT = {"id": 107, "msg": "{}"}
+
+    # Query Parser
+    MALFORMED_VERSION_QUERY = {"id": 200, "msg": "Malformed version query in token: {}"}
+    MALFORMED_PKG_NAME_QUERY = {"id": 201, "msg": "Malformed package name query in token: {}"}
+    MALFORMED_VARIANT = {"id": 202, "msg": "Malformed variant in package query {}: {}"}
 

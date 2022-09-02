@@ -11,6 +11,11 @@ class Version:
 
     @staticmethod
     def _VersionStringToTuple(vstring):
+        if vstring == 'min':
+            return [0,0,0]
+        if vstring == 'max':
+            inf = float('inf')
+            return [inf, inf, inf]
         version_tuple = vstring.split('.')
         if len(version_tuple) == 0 or len(version_tuple) > 3:
             raise Error(ErrorCode.INVALID_VERSION_STRING).format(vstring)

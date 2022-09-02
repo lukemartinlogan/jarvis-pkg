@@ -1,22 +1,23 @@
 
 from jarvis_pkg.basic.query_parser import QueryParser
 
-print(QueryParser().Parse('orangefs'))
-print(QueryParser().Parse('orangefs@2.9.1'))
-print(QueryParser().Parse('orangefs@2.9.1%gcc'))
-print(QueryParser().Parse('orangefs@2.9.1%gcc@9.2'))
+QueryParser('orangefs@2.9.1%gcc@9.2 variant=1').Parse().print()
+QueryParser('orangefs').Parse().print()
+QueryParser('orangefs@2.9.1').Parse().print()
+QueryParser('orangefs@2.9.1%gcc').Parse().print()
+
 
 try:
-    print(QueryParser().Parse('orangefs@2.9.1%gcc@'))
+    QueryParser('orangefs@2.9.1%gcc@').Parse()
 except:
     pass
 
 try:
-    print(QueryParser().Parse('orangefs@2.9.1%'))
+    QueryParser('orangefs@2.9.1%').Parse()
 except:
     pass
 
 try:
-    print(QueryParser().Parse('orangefs@'))
+    QueryParser('orangefs@').Parse()
 except:
     pass
