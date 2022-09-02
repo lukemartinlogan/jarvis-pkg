@@ -38,7 +38,7 @@ class DependencyGraph:
         env = {} #pkg_name -> [{pkg, order, is_build_dep, depends_on}]
         for root_pkg in pkg_list:
             self._GetInstallEnvironment(root_pkg, env)
-        install_schema = [] #[{order_min, row: {pkg, order, is_build_dep, depends_on}}]
+        install_schema = [] #[{order_min, row: [{pkg, order, is_build_dep, depends_on}]}]
         for pkg_info_row in env.values():
             order_min = min(pkg_info_row, key=lambda x: x['order'])
             schema_row = {
@@ -51,6 +51,11 @@ class DependencyGraph:
         final_env = {} #pkg_name -> {order, pkg_set: [pkg]}
         for schema_row in install_schema:
             pkg_info_row = schema_row['row']
+            # if pkg_info_row[0]['pkg'].GetName() == 'A':
+            #     for pkg_info in pkg_info_row:
+            #         for v_info in pkg_info['pkg'].versions:
+            #             print(f"{v_info['version']}")
+            #         print()
 
             """
             Filter out runtime and buildtime deps

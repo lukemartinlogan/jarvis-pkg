@@ -42,14 +42,14 @@ class Version:
         for i in range(cnt):
             if self.vtuple[i] < v2.vtuple[i]:
                 return False
-            if self.vtuple[i] >= v2.vtuple[i]:
+            if self.vtuple[i] > v2.vtuple[i]:
                 return True
         return len(self) >= len(v2)
 
     def __le__(self, v2):
         cnt = min((len(self), len(v2)))
         for i in range(cnt):
-            if self.vtuple[i] <= v2.vtuple[i]:
+            if self.vtuple[i] < v2.vtuple[i]:
                 return True
             if self.vtuple[i] > v2.vtuple[i]:
                 return False

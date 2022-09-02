@@ -1,16 +1,55 @@
-from jarvis_pkg.install.dependency_graph import DependencyGraph
-import json
+from jarvis_pkg import *
+from jarvis_pkg.package.package import Package
 
-def pprint(deps):
-    for dep in deps:
-        print(dep)
-    print()
+class A(Package):
+    def __init__(self):
+        super().__init__()
+        self.version('v2.0.0')
+        self.version('v1.5.0')
+        self.version('v1.0.0')
 
-deps = DependencyGraph("daos").Build()
-pprint(deps)
+class B(Package):
+    def __init__(self):
+        super().__init__()
+        self.version('v2.0.0')
+        self.version('v1.5.0')
+        self.version('v1.0.0')
 
-deps = DependencyGraph("daos@2.9").Build()
-pprint(deps)
+        a = A()
+        a.IntersectVersionRange('v0.0.0', 'v1.0.0')
+        self.depends_on(a)
 
-deps = DependencyGraph("daos@2.9%gcc").Build()
-pprint(deps)
+class C(Package):
+    def __init__(self):
+        super().__init__()
+        self.version('v2.0.0')
+        self.version('v1.5.0')
+        self.version('v1.0.0')
+
+        a = A()
+        a.IntersectVersionRange('v1.5.0', 'v2.5.0')
+        self.depends_on(a)
+
+class D(Package):
+    def __init__(self):
+        super().__init__()
+        self.version('v2.0.0')
+        self.version('v1.5.0')
+        self.version('v1.0.0')
+        self.depends_on(A())
+        self.depends_on(B())
+        self.depends_on(C())
+
+def print_schema(schema):
+    for pkg in schema:
+        pkg.print()
+
+d = D()
+graph = DependencyGraph()
+schema = graph.Build([d])
+#print_schema(schema)
+
+for pkg in schema:
+    if pkg.GetName() == 'A':
+        if pkg.version_['version'] != Version('v1.5.0'):
+            print('A has the wrong version')

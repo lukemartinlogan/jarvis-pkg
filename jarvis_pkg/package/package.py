@@ -26,6 +26,7 @@ class Package(ABC):
         self.patches_ = None # [patches]
         self.build_deps_ = None # [pkg]
         self.run_deps_ = None # [pkg]
+        self.is_solidified_ = False
 
         self.url = None
         self.git = None
@@ -177,6 +178,8 @@ class Package(ABC):
             if p1 and p2:
                 raise Error(ErrorCode.CONFLICT).format(msg)
 
+        self.is_solidified_ = True
+
     def SolidifyFromExisting(self):
         #Check if a package with this version range and these variants are installed
         return False
@@ -304,3 +307,24 @@ class Package(ABC):
         new_pkg.patches = self.patches.copy()
         new_pkg.variants = self.variants.copy()
         return new_pkg
+
+    def print(self):
+        # Print versions
+        print(f"----------{self.GetName()}---------")
+        if len(self.versions):
+            print('VERSIONS:')
+            for version_info in self.versions:
+                print(f"  {version_info['version']}")
+        if len(self.build_deps_):
+            print('BUILD DEPS:')
+            for pkg in self.build_deps_:
+                print(f"  {pkg.GetName()}@{pkg.version_['version']}")
+        if len(self.run_deps_):
+            print('RUN DEPS:')
+            for pkg in self.run_deps_:
+                print(f"  {pkg.GetName()}@{pkg.version_['version']}")
+            print()
+        if len(self.variants):
+            print('VARIANTS:')
+            for key,val in self.variants.items():
+                print(f"  {key}: {val['value']}")
