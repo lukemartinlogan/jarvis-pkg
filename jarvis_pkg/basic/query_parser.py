@@ -1,49 +1,10 @@
 
-from jarvis_pkg.package.package_spec import PackageSpec
 from jarvis_pkg.basic.exception import Error,ErrorCode
 import re
 
-"""
-pkg_name@version%compiler variant=a variant=b +variant ^ dep_pkg_name...
-
-[text]@[text]%[text]@[text]
-
-jpkg install daos
-------------------
-[
-- name: daos
-  version_range: null
-  variants: {}
-  build_deps: []
-]
--------------------
-
-jpkg install daos@2.1%gcc@9.2 +optimize ^ mpich@3.2 +pvfs2
----------------
-[
-- name: daos
-  version_range: (2.1.0, 2.1.9)
-  variants: {
-    optimize: true
-  }
-  build_deps: [
-    - name: gcc
-      version_min: 9.2.0
-      version_max: 9.2.9
-  ]
-- name: orangefs-mpich
-  version_range: (3.2.0, 3.2.9)
-  build_deps: null
-  variants: {
-    pvfs2: true
-  }
-]
----------------
-"""
-
 class QueryParser:
     def _is_sep(self, tok):
-        seps = {'@', '%', '+', '-', '~'}
+        seps = {'@', '%', '+', '-', '~', ':', '='}
         return tok in seps
 
     def _interpret_tok(self, pkg_spec, toks, tok, i):
@@ -68,8 +29,9 @@ class QueryParser:
         if tok == '~':
             pkg_spec.SetVariant(next_tok, False)
         #if tok == '='
+        #if tok == ':'
 
-    def Parse(self, query_string, require_pkg_name=True):
+    def Parse(self, query_string):
         if query_string is None:
             return None
         pkg_queries = []
@@ -78,7 +40,7 @@ class QueryParser:
         for pkg_spec_str in pkg_spec_strs:
             toks = re.split('([@=%\+\-\~]|[ ]+)', pkg_spec_str)
             toks = [tok for tok in toks if len(tok) and tok[0] != ' ']
-            if require_pkg_name:
+            if self._is_sep(toks[0]):
                 pkg_spec = PackageSpec(toks[0])
             else:
                 pkg_spec = PackageSpec()

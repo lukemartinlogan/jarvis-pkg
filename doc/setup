@@ -1,0 +1,28 @@
+jpkg install c@2.3 ^ b@2.1
+
+a:
+b:
+    depends_on('a@2.3', when='@2.3')
+    depends_on('a@2.4', when='@2.4')
+c:
+    depends_on('a@2.3')
+d:
+    depends_on('c')
+    depends_on('b')
+
+Step 1: Create a list of packages to install
+    - Unspecified version
+    - Potentially override variants
+    - Potentially override build-time dependencies
+Step 2: Determine all candidate packages to be installed and their order
+    - Initially passed package install list
+    - Create a semi-initialized environment with this package list
+        - Env is a dict mapping a package name to a Package
+        - Env.Load:
+            intersect versions
+            intersect variants
+            intersect dependencies
+    - Start at the root package
+    - Filter out dependencies depending on the current environment
+    - Check if there are currently any conflicts with the current environment
+    -

@@ -1,4 +1,4 @@
-from jarvis_pkg.query.dependencies import DependencyGraph
+from jarvis_pkg.install.dependency_graph import DependencyGraph
 import json
 
 def pprint(deps):

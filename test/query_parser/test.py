@@ -1,5 +1,5 @@
 
-from jarvis_pkg.query.query_parser import QueryParser
+from jarvis_pkg.basic.query_parser import QueryParser
 
 print(QueryParser().Parse('orangefs'))
 print(QueryParser().Parse('orangefs@2.9.1'))
