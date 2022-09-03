@@ -116,26 +116,26 @@ class Package(ABC):
         deps[pkg.get_class()].append((pkg, when))
         all_deps.append((pkg, when))
 
-    def depends_on(self, pkg, when=None, time='runtime'):
+    def depends_on(self, pkg, when=None, time='run'):
         if isinstance(pkg, str):
-            pkg = QueryParser(pkg).Parse()
+            pkg = QueryParser(pkg).parse()
         if isinstance(when, str):
-            when = QueryParser(when).Parse()
-        if time == 'runtime':
+            when = QueryParser(when).parse()
+        if time == 'run':
             self._depends_on(pkg, when, self.run_deps, self.all_run_deps)
-        else:
+        elif time == 'build':
             self._depends_on(pkg, when, self.build_deps, self.all_build_deps)
 
     def patch(self, path, when=None):
         if isinstance(when, str):
-            when = QueryParser(when).Parse()
+            when = QueryParser(when).parse()
         self.patches.append((path, when))
 
     def conflict(self, query_a, query_b):
         if isinstance(query_a, str):
-            query_a = QueryParser(query_a).Parse()
+            query_a = QueryParser(query_a).parse()
         if isinstance(query_b, str):
-            query_b = QueryParser(query_b).Parse()
+            query_b = QueryParser(query_b).parse()
         self.conflicts.append((query_a, query_b))
 
     """
@@ -161,12 +161,6 @@ class Package(ABC):
             max = Version(max)
         self.versions = [v_info for v_info in self.versions if v_info['version'] >= min and v_info['version'] <= max]
         self.version_set = {v_info['version'] for v_info in self.versions}
-
-    def add_build_dep(self, pkg):
-        self.build_deps[pkg.get_class()].append((pkg, None))
-
-    def add_run_dep(self, pkg):
-        self.run_deps[pkg.get_class()].append((pkg, None))
 
     def get_build_deps(self):
         return self.all_build_deps
@@ -325,15 +319,26 @@ class Package(ABC):
             print('VARIANTS:')
             for key,val in self.variants.items():
                 print(f"  {key}: {val['value']}")
-        if self.build_deps_ is not None and len(self.build_deps_):
-            print('build DEPS:')
-            for pkg in self.build_deps_:
-                print(f"  {pkg.get_name()}@{pkg.version_['version']}")
-        if self.run_deps_ is not None and len(self.run_deps_):
-            print('RUN DEPS:')
-            for pkg in self.run_deps_:
-                print(f"  {pkg.get_name()}@{pkg.version_['version']}")
-            print()
+        if self.is_solidified_:
+            if self.build_deps_ is not None and len(self.build_deps_):
+                print('BUILD DEPS:')
+                for pkg in self.build_deps_:
+                    print(f"  {pkg.get_name()}@{pkg.version_['version']}")
+            if self.run_deps_ is not None and len(self.run_deps_):
+                print('RUN DEPS:')
+                for pkg in self.run_deps_:
+                    print(f"  {pkg.get_name()}@{pkg.version_['version']}")
+                print()
+        else:
+            if self.build_deps is not None and len(self.build_deps):
+                print('BUILD DEPS:')
+                for pkg,condition in self.all_build_deps:
+                    print(f"  {pkg.get_name()}")
+            if self.run_deps is not None and len(self.run_deps):
+                print('RUN DEPS:')
+                for pkg,condition in self.all_run_deps:
+                    print(f"  {pkg.get_name()}")
+                print()
 
     """
     Other

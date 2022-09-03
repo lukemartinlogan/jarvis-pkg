@@ -14,18 +14,20 @@ class QueryParser:
         self.pkgs = []
         self.jpkg_manager = JpkgManager().GetInstance()
 
-    def IsVariant(self, tok):
+    @staticmethod
+    def _is_variant(tok):
         seps = {'+', '-', '~', '='}
         for sep in seps:
             if sep in tok:
                 return True
         return False
 
-    def RemoveWhitespace(self, pkg_query):
+    @staticmethod
+    def _remove_whitespace(pkg_query):
         toks = re.split('([@%\+\-~:=^])|([ ])+', pkg_query)
         return [tok for tok in toks if tok is not None]
 
-    def ParseFindPkg(self, pkg_dep, pkg_find):
+    def _parse_find_pkg(self, pkg_dep, pkg_find):
         if len(pkg_find) == 0:
             pkg_find = self.pkg_name
         pkg_find_tuple = pkg_find.split('.')
@@ -39,7 +41,8 @@ class QueryParser:
             raise Error(ErrorCode.MALFORMED_PKG_NAME_QUERY).format(pkg_dep)
         return pkg_namespace,pkg_name
 
-    def ParsePkgVersionRange(self, pkg_dep, pkg_vrange):
+    @staticmethod
+    def _parse_pkg_version_range(pkg_dep, pkg_vrange):
         pkg_vrange = pkg_vrange.split(':')
         if len(pkg_vrange) == 1:
             min = pkg_vrange[0]
@@ -55,10 +58,10 @@ class QueryParser:
             max = 'max'
         return min,max
 
-    def ParsePkgDep(self, pkg_dep):
+    def _parse_pkg_dep(self, pkg_dep):
         pkg_find,pkg_vrange = pkg_dep.split('@')
-        pkg_namespace,pkg_name = self.ParseFindPkg(pkg_dep, pkg_find)
-        min,max = self.ParsePkgVersionRange(pkg_dep, pkg_vrange)
+        pkg_namespace,pkg_name = self._parse_find_pkg(pkg_dep, pkg_find)
+        min,max = self._parse_pkg_version_range(pkg_dep, pkg_vrange)
 
         pkg_class = self.jpkg_manager._PackageImport(pkg_name)
         if pkg_class is None:
@@ -67,26 +70,29 @@ class QueryParser:
         pkg.intersect_version_range(min,max)
         return pkg
 
-    def IsDep(self, tok):
+    @staticmethod
+    def _is_dep(tok):
         return '%' in tok or '^' in tok
 
-    def SplitPkgDeps(self, pkg_query):
+    def _split_pkg_deps(self, pkg_query):
         toks = [tok for tok in re.split('([%^])', pkg_query) if tok is not None]
         build_deps = []
         run_deps = []
-        if not self.IsDep(toks[0]):
+        if not self._is_dep(toks[0]):
             root_pkg = toks[0]
             toks = toks[1:]
         else:
             root_pkg = self.pkg_name
-        for dep_type,pkg_dep in zip(toks[1:-1], toks[2:]):
+        it = iter(toks)
+        for dep_type,pkg_dep in zip(it,it):
             if dep_type == '%':
                 build_deps.append(pkg_dep)
             else:
                 run_deps.append(pkg_dep)
         return root_pkg, build_deps, run_deps
 
-    def ParseVariant(self, root_pkg, variant):
+    @staticmethod
+    def _parse_variant(root_pkg, variant):
         if '=' in variant:
             toks = variant.split('=')
             if len(toks) != 2:
@@ -109,35 +115,35 @@ class QueryParser:
             raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
         return key,val
 
-    def ParsePkgQuery(self, pkg_query, variants):
-        root_pkg,build_deps,run_deps = self.SplitPkgDeps(pkg_query)
-        root_pkg = self.ParsePkgDep(root_pkg)
+    def _parse_pkg_query(self, pkg_query, variants):
+        root_pkg,build_deps,run_deps = self._split_pkg_deps(pkg_query)
+        root_pkg = self._parse_pkg_dep(root_pkg)
         for pkg_dep in build_deps:
-            root_pkg.add_build_dep(self.ParsePkgDep(pkg_dep))
+            root_pkg.depends_on(self._parse_pkg_dep(pkg_dep), time='build')
         for pkg_dep in run_deps:
-            root_pkg.add_run_dep(self.ParsePkgDep(pkg_dep))
+            root_pkg.depends_on(self._parse_pkg_dep(pkg_dep), time='run')
         for variant in variants:
-            key,value = self.ParseVariant(root_pkg, variant)
+            key,value = self._parse_variant(root_pkg, variant)
             root_pkg.set_variant(key,value)
         return root_pkg
 
-    def SplitPackages(self, query_str):
-        query_str = "".join(self.RemoveWhitespace(query_str))
+    def _split_packages(self, query_str):
+        query_str = "".join(self._remove_whitespace(query_str))
         toks = query_str.split()
         pkgs = []
         for tok in toks:
-            if self.IsVariant(tok):
+            if self._is_variant(tok):
                 if len(pkgs) == 0:
-                    pkgs.append([''])
-                pkgs[-1].append(tok)
+                    pkgs.append((self.pkg_name, []))
+                pkgs[-1][1].append(tok)
             else:
-                pkgs.append([tok])
+                pkgs.append((tok, []))
         return pkgs
 
-    def Parse(self):
-        pkg_queries = self.SplitPackages(self.query_str)
+    def parse(self):
+        pkg_queries = self._split_packages(self.query_str)
         for (pkg_query,variants) in pkg_queries:
-            self.pkgs.append(self.ParsePkgQuery(pkg_query, variants))
+            self.pkgs.append(self._parse_pkg_query(pkg_query, variants))
         return self
 
     def print(self):
