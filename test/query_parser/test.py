@@ -1,24 +1,22 @@
 
 from jarvis_pkg.basic.query_parser import QueryParser
 
-QueryParser('orangefs@2.9.1%gcc@9.2^gcc@9.2 variant=1').parse().print()
-exit(1)
 QueryParser('orangefs').parse().print()
-QueryParser('orangefs@2.9.1').parse().print()
-QueryParser('orangefs@2.9.1%gcc').parse().print()
-
-
-try:
-    QueryParser('orangefs@2.9.1%gcc@').parse()
-except:
-    pass
+QueryParser('orangefs@2.9.8').parse().print()
+QueryParser('orangefs@2.9.8%gcc').parse().print()
+QueryParser('jpkg_builtin.orangefs@2.9.8%gcc@9.2^gcc@9.2 v1=1 +v2 -v3 ~v4').parse().print()
 
 try:
-    QueryParser('orangefs@2.9.1%').parse()
+    QueryParser('orangefs@2.9.1%gcc@').parse().print()
 except:
-    pass
+    print("It failed")
 
 try:
-    QueryParser('orangefs@').parse()
+    QueryParser('orangefs@2.9.1%').parse().print()
 except:
-    pass
+    print("It failed")
+
+try:
+    QueryParser('orangefs@').parse().print()
+except:
+    print("It failed")

@@ -40,4 +40,5 @@ class ErrorCode:
     MALFORMED_VERSION_QUERY = {"id": 200, "msg": "Malformed version query in token: {}"}
     MALFORMED_PKG_NAME_QUERY = {"id": 201, "msg": "Malformed package name query in token: {}"}
     MALFORMED_VARIANT = {"id": 202, "msg": "Malformed variant in package query {}: {}"}
+    MULTIPLE_VERSIONS_IN_QUERY = {"id": 203, "msg": "Multiple versions specified for a single package query {}"}
 

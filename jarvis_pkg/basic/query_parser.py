@@ -27,22 +27,24 @@ class QueryParser:
         toks = re.split('([@%\+\-~:=^])|([ ])+', pkg_query)
         return [tok for tok in toks if tok is not None]
 
-    def _parse_find_pkg(self, pkg_dep, pkg_find):
-        if len(pkg_find) == 0:
-            pkg_find = self.pkg_name
-        pkg_find_tuple = pkg_find.split('.')
-        if len(pkg_find_tuple) == 1:
+    def _parse_pkg_id(self, pkg_dep, pkg_id):
+        if len(pkg_id) == 0:
+            pkg_id = self.pkg_name
+        pkg_id_tuple = pkg_id.split('.')
+        if len(pkg_id_tuple) == 1:
             pkg_namespace = None
-            pkg_name = pkg_find_tuple[0]
-        elif len(pkg_find_tuple) == 2:
-            pkg_namespace = pkg_find_tuple[0]
-            pkg_name = pkg_find_tuple[1]
+            pkg_name = pkg_id_tuple[0]
+        elif len(pkg_id_tuple) == 2:
+            pkg_namespace = pkg_id_tuple[0]
+            pkg_name = pkg_id_tuple[1]
         else:
             raise Error(ErrorCode.MALFORMED_PKG_NAME_QUERY).format(pkg_dep)
         return pkg_namespace,pkg_name
 
     @staticmethod
     def _parse_pkg_version_range(pkg_dep, pkg_vrange):
+        if pkg_vrange is None:
+            return 'min','max'
         pkg_vrange = pkg_vrange.split(':')
         if len(pkg_vrange) == 1:
             min = pkg_vrange[0]
@@ -58,9 +60,17 @@ class QueryParser:
             max = 'max'
         return min,max
 
+    def _parse_pkg_id_version(self, pkg_dep):
+        toks = pkg_dep.split('@')
+        if len(toks) == 1:
+            return toks[0], None
+        if len(toks) > 2:
+            raise Error(ErrorCode.MULTIPLE_VERSIONS_IN_QUERY).format(pkg_dep)
+        return toks
+
     def _parse_pkg_dep(self, pkg_dep):
-        pkg_find,pkg_vrange = pkg_dep.split('@')
-        pkg_namespace,pkg_name = self._parse_find_pkg(pkg_dep, pkg_find)
+        pkg_id, pkg_vrange = self._parse_pkg_id_version(pkg_dep)
+        pkg_namespace,pkg_name = self._parse_pkg_id(pkg_dep, pkg_id)
         min,max = self._parse_pkg_version_range(pkg_dep, pkg_vrange)
 
         pkg_class = self.jpkg_manager._PackageImport(pkg_name)
@@ -106,7 +116,10 @@ class QueryParser:
             key = toks[1]
             val = True
         elif '-' in variant or '~' in variant:
-            toks = variant.split('-')
+            if '-' in variant:
+                toks = variant.split('-')
+            else:
+                toks = variant.split('~')
             if len(toks) != 2:
                 raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
             key = toks[1]
