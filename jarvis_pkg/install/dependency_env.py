@@ -20,8 +20,9 @@ class DependencyEnvRow:
         self.name = None
         self.row = []
 
-    def AddEntry(self, pkg, order, is_build_dep, parent, conditions):
-        self.row.append(DependencyEnvEntry(pkg, order, is_build_dep, parent, conditions))
+    def add_entry(self, pkg, order, is_build_dep, parent, conditions):
+        self.row.append(DependencyEnvEntry(pkg, order, is_build_dep,
+                                           parent, conditions))
         if self.order < order:
             self.order = order
         if self.name is None:
@@ -37,19 +38,26 @@ class DependencyEnv:
     def __init__(self):
         self.nodes = {}
 
-    def AddEntry(self, pkg, order, is_build_dep, parent, conditions):
+    def add_entry(self, pkg, order, is_build_dep, parent, conditions):
         if pkg.get_class() not in self.nodes:
             self.nodes[pkg.get_class()] = DependencyEnvRow()
-        self.nodes[pkg.get_class()].AddEntry(pkg, order, is_build_dep, parent, conditions)
+        self.nodes[pkg.get_class()].add_entry(pkg, order, is_build_dep, parent, conditions)
 
-    def AddRow(self, pkgs, order):
+    def add_row(self, pkgs, order):
         for pkg in pkgs:
-            self.AddEntry(pkg, order, False, None, None)
+            self.add_entry(pkg, order, False, None, None)
 
     def list(self, reverse=False):
         install_schema = list(self.nodes.values())
         install_schema.sort(reverse=reverse,key=lambda row: row.order)
         return install_schema
+
+    def find_pkg(self, pkg_query):
+        pkg_row = self.nodes[pkg_query.get_class()].row
+        for pkg in pkg_row:
+            if not pkg.copy().intersect(pkg_query).is_null():
+                return pkg
+        return None
 
     def _contains_condition(self, condition):
         if condition is None:

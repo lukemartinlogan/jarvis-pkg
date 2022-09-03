@@ -6,7 +6,7 @@ class DependencyGraph:
     def __init__(self):
         self.jpkg_manager = JpkgManager.GetInstance()
 
-    def _GetInstallEnvironment(self, root_pkg, env, order=0, build_dep=False, parent=None, conditions=None, cycle_set=None):
+    def _get_install_environment(self, root_pkg, env, order=0, build_dep=False, parent=None, conditions=None, cycle_set=None):
         if cycle_set is None:
             cycle_set = set()
         if root_pkg.get_class() not in cycle_set:
@@ -15,15 +15,15 @@ class DependencyGraph:
             raise Error(ErrorCode.CYCLIC_DEPENDENCY).format(root_pkg.get_class())
         root_pkg._define_deps()
         for dep_pkg,dep_conditions in root_pkg.get_build_deps():
-            self._GetInstallEnvironment(dep_pkg, env, order=order+1, build_dep=True*build_dep, parent=root_pkg, conditions=dep_conditions)
+            self._get_install_environment(dep_pkg, env, order=order+1, build_dep=True*build_dep, parent=root_pkg, conditions=dep_conditions)
         for dep_pkg,dep_conditions in root_pkg.get_run_deps():
-            self._GetInstallEnvironment(dep_pkg, env, order=order+1, parent=root_pkg, conditions=dep_conditions)
-        env.AddEntry(root_pkg, order, build_dep, parent, conditions)
+            self._get_install_environment(dep_pkg, env, order=order+1, parent=root_pkg, conditions=dep_conditions)
+        env.add_entry(root_pkg, order, build_dep, parent, conditions)
 
-    def Build(self, pkg_list):
+    def build(self, pkg_list):
         env = DependencyEnv()
         for root_pkg in pkg_list:
-            self._GetInstallEnvironment(root_pkg, env)
+            self._get_install_environment(root_pkg, env)
         ordered_rows = env.list()
 
         final_env = DependencyEnv()
@@ -90,7 +90,7 @@ class DependencyGraph:
             """
             Solidify package version + variants
             """
-            final_env.AddRow(final_pkg_set, order)
+            final_env.add_row(final_pkg_set, order)
             for pkg in final_pkg_set:
                 pkg.solidify_version()
 

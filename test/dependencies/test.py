@@ -1,7 +1,15 @@
+"""
+Test the dependency graph
+"""
+
 from jarvis_pkg import *
 from jarvis_pkg.package.package import Package
 
+
 class A(Package):
+    """
+    Class A
+    """
     def _define_versions(self):
         self.version('v2.0.0')
         self.version('v1.5.0')
@@ -13,12 +21,19 @@ class A(Package):
     def _define_conflicts(self):
         pass
 
+
 class B(Package):
+    """
+    Class B
+    """
+
     def _define_versions(self):
         self.version('v2.0.0')
         self.version('v1.5.0')
         self.version('v1.0.0')
-        self.variant('test', default='test1', choices=['test1', 'test2', 'test3'], msg='Test case to use')
+        self.variant('test', default='test1',
+                     choices=['test1', 'test2', 'test3'],
+                     msg='Test case to use')
 
     def _define_deps(self):
         a1 = A()
@@ -43,7 +58,11 @@ class B(Package):
     def _define_conflicts(self):
         pass
 
+
 class C(Package):
+    """
+    Class C
+    """
     def _define_versions(self):
         self.version('v2.0.0')
         self.version('v1.5.0')
@@ -57,12 +76,19 @@ class C(Package):
     def _define_conflicts(self):
         pass
 
+
 class D(Package):
+    """
+    Class D
+    """
+
     def _define_versions(self):
         self.version('v2.0.0')
         self.version('v1.5.0')
         self.version('v1.0.0')
-        self.variant('test', default='test1', choices=['test1', 'test2', 'test3'], msg='Test case to use')
+        self.variant('test', default='test1',
+                     choices=['test1', 'test2', 'test3'],
+                     msg='Test case to use')
 
     def _define_deps(self):
         b1 = B()
@@ -89,14 +115,20 @@ class D(Package):
     def _define_conflicts(self):
         pass
 
+
 def print_schema(schema):
     for pkg in schema:
         pkg.print()
 
-d = D()
-graph = DependencyGraph()
-schema = graph.Build([d])
-for pkg in schema:
-    if pkg.get_name() == 'A':
-        if pkg.version_['version'] != Version('v1.5.0'):
-            print(f"A has the wrong version: {pkg.version_['version']}")
+
+def run_test():
+    d = D()
+    graph = DependencyGraph()
+    schema = graph.build([d])
+    for pkg in schema:
+        if pkg.get_name() == 'A':
+            if pkg.version_['version'] != Version('v1.5.0'):
+                print(f"A has the wrong version: {pkg.version_['version']}")
+
+
+run_test()

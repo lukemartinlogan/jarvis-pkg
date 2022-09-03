@@ -221,22 +221,17 @@ class Package(ABC):
     def is_null(self):
         return self.is_null_ is not None
 
-    def is_scratch(self, v_info):
+    @staticmethod
+    def is_scratch(v_info):
         return v_info['git'] is None or v_info['url'] is None
 
-    def _find_pkg(self, cur_env, pkg_query):
-        pkg_set = cur_env[pkg_query.get_class()]['pkg_set']
-        for pkg in pkg_set:
-            if not pkg.copy().intersect(pkg_query).is_null():
-                return pkg
-        return None
-
-    def _solidify_deps(self, cur_env, deps):
+    @staticmethod
+    def _solidify_deps(cur_env, deps):
         new_deps = []
         for pkg_name, pkg_row in deps.items():
             for pkg, condition in pkg_row:
                 if condition in cur_env:
-                    new_deps.append(self._find_pkg(cur_env, pkg))
+                    new_deps.append(cur_env.find_pkg(cur_env, pkg))
         return new_deps
 
     def solidify_version(self):
@@ -334,7 +329,7 @@ class Package(ABC):
             for key,val in self.variants.items():
                 print(f"  {key}: {val['value']}")
         if self.build_deps_ is not None and len(self.build_deps_):
-            print('BUILD DEPS:')
+            print('build DEPS:')
             for pkg in self.build_deps_:
                 print(f"  {pkg.get_name()}@{pkg.version_['version']}")
         if self.run_deps_ is not None and len(self.run_deps_):
