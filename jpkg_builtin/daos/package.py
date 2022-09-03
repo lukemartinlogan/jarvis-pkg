@@ -4,8 +4,7 @@ import shutil
 import os
 
 class Daos(SConsPackage,CPackage,CppPackage):
-    def __init__(self):
-        super().__init__()
+    def define_versions(self):
         #Distro package managers
         self.version('2.0',
                 distro='centos8',

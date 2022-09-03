@@ -4,5 +4,5 @@ import shutil
 import os
 
 class Git(Package,CPackage,CppPackage):
-    def __init__(self):
-        super().__init__()
+    def define_versions(self):
+        pass

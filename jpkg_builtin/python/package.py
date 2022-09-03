@@ -4,7 +4,5 @@ import shutil
 import os
 
 class Python(Package,CPackage,CppPackage):
-    def __init__(self):
-        super().__init__()
-        #Distro package managers
+    def define_versions(self):
         self.version('3.6.4', tag='yum', yum='python3')

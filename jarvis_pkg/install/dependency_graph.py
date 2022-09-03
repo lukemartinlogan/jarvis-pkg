@@ -13,7 +13,7 @@ class DependencyGraph:
             cycle_set.add(root_pkg.get_class())
         else:
             raise Error(ErrorCode.CYCLIC_DEPENDENCY).format(root_pkg.get_class())
-        root_pkg._define_deps()
+        root_pkg.define_deps()
         for dep_pkg,dep_conditions in root_pkg.get_build_deps():
             self._get_install_environment(dep_pkg, env, order=order+1, build_dep=True*build_dep, parent=root_pkg, conditions=dep_conditions)
         for dep_pkg,dep_conditions in root_pkg.get_run_deps():

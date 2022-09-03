@@ -21,9 +21,10 @@ class MakeInstallNode(ExecNode):
         super().__init__(cmds, shell=True)
 
 class MakePackage(Package):
-    def __init__(self):
-        super().__init__()
+    def define_versions(self):
         self.phases = ['build', 'install']
+
+    def define_deps(self):
         self.depends_on('make')
 
     def build(self, spec, prefix):

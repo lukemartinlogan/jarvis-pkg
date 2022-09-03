@@ -50,28 +50,25 @@ class Package(ABC):
         self.variant('prefer_scratch', type=bool, default=True,
                      msg="If a package is not installed, whether or not to build from source or"
                          "install using a different package manager")
-        self._define_versions()
+        self.define_versions()
 
     """
     Package Definition
     """
 
-    @abstractmethod
-    def _define_versions(self):
+    def define_versions(self):
         pass
 
-    @abstractmethod
-    def _define_deps(self):
+    def define_deps(self):
         pass
 
-    @abstractmethod
-    def _define_conflicts(self):
+    def define_conflicts(self):
         pass
 
     def version(self, version_string, tag=None, help="", url=None,
                 git=None, branch=None, commit=None, submodules=False,
                 apt=None, yum=None, dnf=None, zypper=None, pacman=None, repo_url=None, gpg=None,
-                pip=None, npm=None, stable=True):
+                pip=None, npm=None, stable=True, distro=None):
 
         if tag is None:
             tag = version_string

@@ -4,10 +4,10 @@ import shutil
 import os
 
 class Orangefs(AutotoolsPackage):
-    #Versions
-    version('2.9.8', url='http://download.orangefs.org/current/source/orangefs-2.9.8.tar.gz')
+    def define_versions(self):
+        self.version('2.9.8', url='http://download.orangefs.org/current/source/orangefs-2.9.8.tar.gz')
 
-    def configure_args(self, spec):
+    def configure_args(self, spec, prefix):
         args = []
         if self.spec['orangefs']:
             args += [

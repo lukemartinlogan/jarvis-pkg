@@ -15,7 +15,7 @@ class CMakeNode(ExecNode):
         super().__init__(cmds, shell=True)
 
 class CMakePackage(Package):
-    def __init__(self):
+    def define_versions(self):
         self.phases = ['cmake', 'build', 'install']
         self.depends_on('cmake')
 

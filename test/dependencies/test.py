@@ -10,15 +10,15 @@ class A(Package):
     """
     Class A
     """
-    def _define_versions(self):
+    def define_versions(self):
         self.version('v2.0.0')
         self.version('v1.5.0')
         self.version('v1.0.0')
 
-    def _define_deps(self):
+    def define_deps(self):
         pass
 
-    def _define_conflicts(self):
+    def define_conflicts(self):
         pass
 
 
@@ -27,7 +27,7 @@ class B(Package):
     Class B
     """
 
-    def _define_versions(self):
+    def define_versions(self):
         self.version('v2.0.0')
         self.version('v1.5.0')
         self.version('v1.0.0')
@@ -35,7 +35,7 @@ class B(Package):
                      choices=['test1', 'test2', 'test3'],
                      msg='Test case to use')
 
-    def _define_deps(self):
+    def define_deps(self):
         a1 = A()
         a1.intersect_version_range('v0.0.0', 'v1.5.0')
         cond1 = B()
@@ -55,7 +55,7 @@ class B(Package):
         self.depends_on(a2, when=[cond2])
         self.depends_on(a3, when=[cond3])
 
-    def _define_conflicts(self):
+    def define_conflicts(self):
         pass
 
 
@@ -63,17 +63,17 @@ class C(Package):
     """
     Class C
     """
-    def _define_versions(self):
+    def define_versions(self):
         self.version('v2.0.0')
         self.version('v1.5.0')
         self.version('v1.0.0')
 
-    def _define_deps(self):
+    def define_deps(self):
         a = A()
         a.intersect_version_range('v1.5.0', 'v2.5.0')
         self.depends_on(a)
 
-    def _define_conflicts(self):
+    def define_conflicts(self):
         pass
 
 
@@ -82,7 +82,7 @@ class D(Package):
     Class D
     """
 
-    def _define_versions(self):
+    def define_versions(self):
         self.version('v2.0.0')
         self.version('v1.5.0')
         self.version('v1.0.0')
@@ -90,7 +90,7 @@ class D(Package):
                      choices=['test1', 'test2', 'test3'],
                      msg='Test case to use')
 
-    def _define_deps(self):
+    def define_deps(self):
         b1 = B()
         b1.set_variant('test', 'test1')
         cond1 = D()
@@ -112,7 +112,7 @@ class D(Package):
         self.depends_on(b3, when=[cond3])
         self.depends_on(C())
 
-    def _define_conflicts(self):
+    def define_conflicts(self):
         pass
 
 
