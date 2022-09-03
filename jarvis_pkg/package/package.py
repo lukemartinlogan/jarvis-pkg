@@ -50,21 +50,96 @@ class Package(ABC):
         self.variant('prefer_scratch', type=bool, default=True,
                      msg="If a package is not installed, whether or not to build from source or"
                          "install using a different package manager")
-        self._Init(self)
-        self._InitDynamic()
+        self._DefineVersions()
 
-    def RecurseCopy(self):
-        pkg = Package()
-        pkg.SetName(self.GetName())
-        pkg.SetClass(self.GetClass())
-        self._Init(pkg)
-        return pkg
+    """
+    Package Initialization
+    """
 
-    @staticmethod
-    def _Init(self):
+    @abstractmethod
+    def _DefineVersions(self):
         pass
-    def _InitDynamic(self):
+
+    @abstractmethod
+    def _DefineDeps(self):
         pass
+
+    @abstractmethod
+    def _DefineConflicts(self):
+        pass
+
+    def version(self, version_string, tag=None, help="", url=None,
+                git=None, branch=None, commit=None, submodules=False,
+                apt=None, yum=None, dnf=None, zypper=None, pacman=None, repo_url=None, gpg=None,
+                pip=None, npm=None, stable=True):
+
+        if tag is None:
+            tag = version_string
+        version_info = {}
+        version_info['version'] = Version(version_string)
+        version_info['stable'] = stable
+        version_info['tag'] = tag
+        version_info['help'] = help
+        version_info['url'] = url if url is not None else self.url
+        version_info['git'] = git if git is not None else self.git
+        version_info['branch'] = branch if branch is not None else self.branch
+        version_info['commit'] = commit if commit is not None else self.commit
+        version_info['apt'] = apt if apt is not None else self.apt
+        version_info['yum'] = yum if yum is not None else self.yum
+        version_info['dnf'] = dnf if dnf is not None else self.dnf
+        version_info['zypper'] = zypper if zypper is not None else self.zypper
+        version_info['pacman'] = pacman if pacman is not None else self.pacman
+        version_info['repo_url'] = repo_url if repo_url is not None else self.repo
+        version_info['gpg'] = gpg if gpg is not None else self.gpg
+        version_info['pip'] = pip if pip is not None else self.pip
+        version_info['npm'] = npm if npm is not None else self.npm
+
+        if version_info['git'] is not None:
+            self.depends_on('git')
+        if version_info['npm'] is not None:
+            self.depends_on('npm')
+        if version_info['pip'] is not None:
+            self.depends_on('python')
+
+        self.versions.append(version_info)
+        self.version_set.add(version_info['version'])
+
+    def variant(self, name, default=None, type=None, choices=None, msg=None):
+        variant_info = {
+            'value': default,
+            'type': type,
+            'choices': choices,
+            'msg': msg
+        }
+        self.default_variants[name] = variant_info
+
+    def _depends_on(self, pkg, when, deps, all_deps):
+        if pkg.GetClass() not in deps:
+            deps[pkg.GetClass()] = []
+        deps[pkg.GetClass()].append((pkg, when))
+        all_deps.append((pkg, when))
+
+    def depends_on(self, pkg, when=None, time='runtime'):
+        if isinstance(pkg, str):
+            pkg = QueryParser(pkg).Parse()
+        if isinstance(when, str):
+            when = QueryParser(when).Parse()
+        if time == 'runtime':
+            self._depends_on(pkg, when, self.run_deps, self.all_run_deps)
+        else:
+            self._depends_on(pkg, when, self.build_deps, self.all_build_deps)
+
+    def patch(self, path, when=None):
+        if isinstance(when, str):
+            when = QueryParser(when).Parse()
+        self.patches.append((path, when))
+
+    def conflict(self, query_a, query_b):
+        if isinstance(query_a, str):
+            query_a = QueryParser(query_a).Parse()
+        if isinstance(query_b, str):
+            query_b = QueryParser(query_b).Parse()
+        self.conflicts.append((query_a, query_b))
 
     """
     Package Command Line
@@ -204,90 +279,6 @@ class Package(ABC):
         pass
 
     """
-    Package Initialization
-    """
-
-    def version(self, version_string, tag=None, help="", url=None,
-            git=None, branch=None, commit=None, submodules=False,
-            apt=None, yum=None, dnf=None, zypper=None, pacman=None, repo_url=None, gpg=None,
-            pip=None, npm=None, stable=True):
-
-        if tag is None:
-            tag = version_string
-        version_info = {}
-        version_info['version'] = Version(version_string)
-        version_info['stable'] = stable
-        version_info['tag'] = tag
-        version_info['help'] = help
-        version_info['url'] = url if url is not None else self.url
-        version_info['git'] = git if git is not None else self.git
-        version_info['branch'] = branch if branch is not None else self.branch
-        version_info['commit'] = commit if commit is not None else self.commit
-        version_info['apt'] = apt if apt is not None else self.apt
-        version_info['yum'] = yum if yum is not None else self.yum
-        version_info['dnf'] = dnf if dnf is not None else self.dnf
-        version_info['zypper'] = zypper if zypper is not None else self.zypper
-        version_info['pacman'] = pacman if pacman is not None else self.pacman
-        version_info['repo_url'] = repo_url if repo_url is not None else self.repo
-        version_info['gpg'] = gpg if gpg is not None else self.gpg
-        version_info['pip'] = pip if pip is not None else self.pip
-        version_info['npm'] = npm if npm is not None else self.npm
-
-        if version_info['git'] is not None:
-            self.depends_on('git')
-        if version_info['npm'] is not None:
-            self.depends_on('npm')
-        if version_info['pip'] is not None:
-            self.depends_on('python')
-
-        self.versions.append(version_info)
-        self.version_set.add(version_info['version'])
-
-    def variant(self, name, default=None, type=None, choices=None, msg=None):
-        variant_info = {
-            'value': default,
-            'type': type,
-            'choices': choices,
-            'msg': msg
-        }
-        self.default_variants[name] = variant_info
-
-    def _depends_on(self, pkg, when, deps, all_deps):
-        if pkg.GetClass() not in deps:
-            deps[pkg.GetClass()] = []
-        deps[pkg.GetClass()].append((pkg, when))
-        all_deps.append((pkg,when))
-
-    def depends_on(self, pkg, when=None, time='runtime'):
-        if isinstance(pkg, str):
-            pkg = QueryParser().Parse(pkg)
-        if isinstance(when, str):
-            when = QueryParser().Parse(when)
-        if time == 'runtime':
-            self._depends_on(pkg, when, self.run_deps, self.all_run_deps)
-        else:
-            self._depends_on(pkg, when, self.build_deps, self.all_build_deps)
-
-    def patch(self, path, when=None):
-        self.patches.append((path, when))
-
-    def conflict(self, query_a, query_b):
-        self.conflicts.append((query_a, query_b))
-
-    def setup_run_environment(self, env):
-        env.prepend_path('CPATH', os.path.join(self.prefix, 'include'))
-        env.prepend_path('INCLUDE', os.path.join(self.prefix, 'include'))
-        env.prepend_path('LIBRARY_PATH', os.path.join(self.prefix, 'lib'))
-        env.prepend_path('LIBRARY_PATH', os.path.join(self.prefix, 'lib64'))
-        env.prepend_path('LD_LIBRARY_PATH', os.path.join(self.prefix, 'lib64'))
-        env.prepend_path('LD_LIBRARY_PATH', os.path.join(self.prefix, 'lib64'))
-        env.prepend_path('PATH', os.path.join(self.prefix, 'bin'))
-
-    def _register_repo_rhel(self, repo_url, gpg):
-        self.download(repo_url, 'beegfs.repo')
-        self.copy('beegfs.repo', '/etc/yum/repos.d', sudo=True)
-
-    """
     Standard Library
     """
     def dict(self):
@@ -339,3 +330,20 @@ class Package(ABC):
             for pkg in self.run_deps_:
                 print(f"  {pkg.GetName()}@{pkg.version_['version']}")
             print()
+
+    """
+    Other
+    """
+
+    def setup_run_environment(self, env):
+        env.prepend_path('CPATH', os.path.join(self.prefix, 'include'))
+        env.prepend_path('INCLUDE', os.path.join(self.prefix, 'include'))
+        env.prepend_path('LIBRARY_PATH', os.path.join(self.prefix, 'lib'))
+        env.prepend_path('LIBRARY_PATH', os.path.join(self.prefix, 'lib64'))
+        env.prepend_path('LD_LIBRARY_PATH', os.path.join(self.prefix, 'lib64'))
+        env.prepend_path('LD_LIBRARY_PATH', os.path.join(self.prefix, 'lib64'))
+        env.prepend_path('PATH', os.path.join(self.prefix, 'bin'))
+
+    def _register_repo_rhel(self, repo_url, gpg):
+        self.download(repo_url, 'beegfs.repo')
+        self.copy('beegfs.repo', '/etc/yum/repos.d', sudo=True)

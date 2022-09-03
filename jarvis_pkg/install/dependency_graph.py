@@ -13,6 +13,7 @@ class DependencyGraph:
             cycle_set.add(root_pkg.GetClass())
         else:
             raise Error(ErrorCode.CYCLIC_DEPENDENCY).format(root_pkg.GetClass())
+        root_pkg._DefineDeps()
         for dep_pkg,dep_conditions in root_pkg.GetBuildDeps():
             self._GetInstallEnvironment(dep_pkg, env, order=order+1, build_dep=True*build_dep, parent=root_pkg, conditions=dep_conditions)
         for dep_pkg,dep_conditions in root_pkg.GetRunDeps():
