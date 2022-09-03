@@ -9,14 +9,14 @@ class DependencyGraph:
     def _GetInstallEnvironment(self, root_pkg, env, order=0, build_dep=False, parent=None, conditions=None, cycle_set=None):
         if cycle_set is None:
             cycle_set = set()
-        if root_pkg.GetClass() not in cycle_set:
-            cycle_set.add(root_pkg.GetClass())
+        if root_pkg.get_class() not in cycle_set:
+            cycle_set.add(root_pkg.get_class())
         else:
-            raise Error(ErrorCode.CYCLIC_DEPENDENCY).format(root_pkg.GetClass())
-        root_pkg._DefineDeps()
-        for dep_pkg,dep_conditions in root_pkg.GetBuildDeps():
+            raise Error(ErrorCode.CYCLIC_DEPENDENCY).format(root_pkg.get_class())
+        root_pkg._define_deps()
+        for dep_pkg,dep_conditions in root_pkg.get_build_deps():
             self._GetInstallEnvironment(dep_pkg, env, order=order+1, build_dep=True*build_dep, parent=root_pkg, conditions=dep_conditions)
-        for dep_pkg,dep_conditions in root_pkg.GetRunDeps():
+        for dep_pkg,dep_conditions in root_pkg.get_run_deps():
             self._GetInstallEnvironment(dep_pkg, env, order=order+1, parent=root_pkg, conditions=dep_conditions)
         env.AddEntry(root_pkg, order, build_dep, parent, conditions)
 
@@ -49,14 +49,14 @@ class DependencyGraph:
             order = max(row, key=lambda dep_entry: dep_entry.order).order
 
             """
-            Intersect all runtime deps
+            intersect all runtime deps
             """
             final_pkg_set = [] #[pkg]
             if len(run_row):
                 final_run_pkg = run_row[0].pkg.copy()
                 for dep_entry in run_row[1:]:
-                    final_run_pkg.Intersect(dep_entry.pkg)
-                    if final_run_pkg.IsNull():
+                    final_run_pkg.intersect(dep_entry.pkg)
+                    if final_run_pkg.is_null():
                         raise final_run_pkg.is_null_
                 final_pkg_set.append(final_run_pkg)
 
@@ -68,8 +68,8 @@ class DependencyGraph:
                 run_order_max = max(run_row, key=lambda dep_entry: dep_entry.order).order
                 for build_dep_entry in build_row:
                     if build_dep_entry.order <= run_order_max:
-                        conflict = build_dep_entry.pkg.copy().Intersect(final_run_pkg)
-                        if conflict.IsNull():
+                        conflict = build_dep_entry.pkg.copy().intersect(final_run_pkg)
+                        if conflict.is_null():
                             raise conflict.is_null_
 
             """
@@ -81,8 +81,8 @@ class DependencyGraph:
             for dep_entry in build_row:
                 for i,final_build_pkg in enumerate(final_pkg_set):
                     final_build_pkg = final_build_pkg.copy()
-                    final_build_pkg.Intersect(dep_entry.pkg)
-                    if final_build_pkg.IsNull():
+                    final_build_pkg.intersect(dep_entry.pkg)
+                    if final_build_pkg.is_null():
                         final_pkg_set.append(dep_entry.pkg.copy())
                     else:
                         final_pkg_set[i] = final_build_pkg
@@ -92,7 +92,7 @@ class DependencyGraph:
             """
             final_env.AddRow(final_pkg_set, order)
             for pkg in final_pkg_set:
-                pkg.SolidifyVersion()
+                pkg.solidify_version()
 
         """
         Create ordered list of packages to install
@@ -104,5 +104,5 @@ class DependencyGraph:
         Solidify package dependencies
         """
         for pkg in install_schema:
-            pkg.SolidifyDeps(final_env)
+            pkg.solidify_deps(final_env)
         return install_schema

@@ -50,22 +50,22 @@ class Package(ABC):
         self.variant('prefer_scratch', type=bool, default=True,
                      msg="If a package is not installed, whether or not to build from source or"
                          "install using a different package manager")
-        self._DefineVersions()
+        self._define_versions()
 
     """
-    Package Initialization
+    Package Definition
     """
 
     @abstractmethod
-    def _DefineVersions(self):
+    def _define_versions(self):
         pass
 
     @abstractmethod
-    def _DefineDeps(self):
+    def _define_deps(self):
         pass
 
     @abstractmethod
-    def _DefineConflicts(self):
+    def _define_conflicts(self):
         pass
 
     def version(self, version_string, tag=None, help="", url=None,
@@ -114,9 +114,9 @@ class Package(ABC):
         self.default_variants[name] = variant_info
 
     def _depends_on(self, pkg, when, deps, all_deps):
-        if pkg.GetClass() not in deps:
-            deps[pkg.GetClass()] = []
-        deps[pkg.GetClass()].append((pkg, when))
+        if pkg.get_class() not in deps:
+            deps[pkg.get_class()] = []
+        deps[pkg.get_class()].append((pkg, when))
         all_deps.append((pkg, when))
 
     def depends_on(self, pkg, when=None, time='runtime'):
@@ -142,22 +142,22 @@ class Package(ABC):
         self.conflicts.append((query_a, query_b))
 
     """
-    Package Command Line
+    Package Modification
     """
 
-    def GetName(self):
+    def get_name(self):
         return self.name
 
-    def SetName(self, name):
+    def set_name(self, name):
         self.name = name
 
-    def SetClass(self, pclass):
+    def set_class(self, pclass):
         self.pclass = pclass
 
-    def GetClass(self):
+    def get_class(self):
         return self.pclass
 
-    def IntersectVersionRange(self, min, max):
+    def intersect_version_range(self, min, max):
         if isinstance(min, str):
             min = Version(min)
         if isinstance(max, str):
@@ -165,34 +165,46 @@ class Package(ABC):
         self.versions = [v_info for v_info in self.versions if v_info['version'] >= min and v_info['version'] <= max]
         self.version_set = {v_info['version'] for v_info in self.versions}
 
-    def AddBuildDep(self, pkg):
-        self.build_deps[pkg.GetClass()].append((pkg, None))
+    def add_build_dep(self, pkg):
+        self.build_deps[pkg.get_class()].append((pkg, None))
 
-    def AddRunDep(self, pkg):
-        self.run_deps[pkg.GetClass()].append((pkg, None))
+    def add_run_dep(self, pkg):
+        self.run_deps[pkg.get_class()].append((pkg, None))
 
-    def GetBuildDeps(self):
+    def get_build_deps(self):
         return self.all_build_deps
 
-    def GetRunDeps(self):
+    def get_run_deps(self):
         return self.all_run_deps
 
-    def SetVariant(self, key, value):
+    def set_variant(self, key, value):
         if key not in self.variants:
             self.variants[key] = self.default_variants.copy()
         self.variants[key]['value'] = value
 
-    def _intersect_deps(self, pkg_deps, self_deps):
+    def variant_eq(self, key, value):
+        if key not in self.variants:
+            return False
+        return self.variants[key]['value'] == value
+
+    def variant_true(self, key):
+        return self.variant_eq(key, True)
+
+    def variant_false(self, key):
+        return self.variant_eq(key, False)
+
+    @staticmethod
+    def _intersect_deps(pkg_deps, self_deps):
         for pkg_name, pkg_row in pkg_deps.items():
             for i,(pkg,c) in enumerate(pkg_row):
-                self_deps[pkg.GetClass()][i][0].Intersect(pkg)
+                self_deps[pkg.get_class()][i][0].intersect(pkg)
 
-    def Intersect(self, pkg):
+    def intersect(self, pkg):
         if self.is_null_ is not None:
             return self
         self.versions = [v_info for v_info in self.versions if v_info['version'] in self.version_set and v_info['version'] in pkg.version_set]
         if len(self.versions) == 0:
-            self.is_null_ = Error(ErrorCode.CONFLICTING_VERSIONS).format(self.GetName())
+            self.is_null_ = Error(ErrorCode.CONFLICTING_VERSIONS).format(self.get_name())
             return self
         self.version_set = {v_info['version'] for v_info in self.versions}
         self._intersect_deps(pkg.build_deps, self.build_deps)
@@ -206,16 +218,16 @@ class Package(ABC):
                 self.variants[key] = val
         return self
 
-    def IsNull(self):
+    def is_null(self):
         return self.is_null_ is not None
 
-    def IsScratch(self, v_info):
+    def is_scratch(self, v_info):
         return v_info['git'] is None or v_info['url'] is None
 
     def _find_pkg(self, cur_env, pkg_query):
-        pkg_set = cur_env[pkg_query.GetClass()]['pkg_set']
+        pkg_set = cur_env[pkg_query.get_class()]['pkg_set']
         for pkg in pkg_set:
-            if not pkg.copy().Intersect(pkg_query).IsNull():
+            if not pkg.copy().intersect(pkg_query).is_null():
                 return pkg
         return None
 
@@ -227,7 +239,7 @@ class Package(ABC):
                     new_deps.append(self._find_pkg(cur_env, pkg))
         return new_deps
 
-    def SolidifyVersion(self):
+    def solidify_version(self):
         #Solidify variants
         for key,val in self.default_variants.items():
             if key not in self.variants:
@@ -235,8 +247,8 @@ class Package(ABC):
 
         #Check if a matching package is already installed
         if not self.variants['introspect']:
-            self.versions = [v_info for v_info in self.versions if self.IsScratch(v_info)]
-        if self.SolidifyFromExisting():
+            self.versions = [v_info for v_info in self.versions if self.is_scratch(v_info)]
+        if self.solidify_from_existing():
             return
 
         #Solidify version
@@ -247,15 +259,15 @@ class Package(ABC):
         self.versions.sort(key=lambda x: x['version'])
         self.versions = [self.versions[-1]]
 
-    def SolidifyDeps(self, cur_env):
+    def solidify_deps(self, cur_env):
         # Solidify dependencies
         self.version_ = self.versions[-1]
         self.patches_ = [patch_info for patch_info, condition in self.patches if condition in cur_env]
         self.build_deps_ = self._solidify_deps(cur_env, self.build_deps)
         self.run_deps_ = self._solidify_deps(cur_env, self.run_deps)
-        self.FilterBuildDeps(self.build_deps_)
-        self.FilterRunDeps(self.run_deps_)
-        self.FilterPatches(self.patches_)
+        self.filter_build_deps(self.build_deps_)
+        self.filter_run_deps(self.run_deps_)
+        self.filter_patches(self.patches_)
 
         # Check conflicts
         for query_a, query_b, msg in self.conflicts:
@@ -266,16 +278,16 @@ class Package(ABC):
 
         self.is_solidified_ = True
 
-    def SolidifyFromExisting(self):
+    def solidify_from_existing(self):
         #Check if a package with this version range and these variants are installed
         return False
-    def FilterBuildDeps(self, build_deps):
+    def filter_build_deps(self, build_deps):
         pass
-    def FilterRunDeps(self, run_deps):
+    def filter_run_deps(self, run_deps):
         pass
-    def FilterPatches(self, patches):
+    def filter_patches(self, patches):
         pass
-    def CheckConflicts(self):
+    def check_conflicts(self):
         pass
 
     """
@@ -312,7 +324,7 @@ class Package(ABC):
 
     def print(self):
         # Print versions
-        print(f"----------{self.GetName()}---------")
+        print(f"----------{self.get_name()}---------")
         if len(self.versions):
             print('VERSIONS:')
             for version_info in self.versions:
@@ -324,11 +336,11 @@ class Package(ABC):
         if self.build_deps_ is not None and len(self.build_deps_):
             print('BUILD DEPS:')
             for pkg in self.build_deps_:
-                print(f"  {pkg.GetName()}@{pkg.version_['version']}")
+                print(f"  {pkg.get_name()}@{pkg.version_['version']}")
         if self.run_deps_ is not None and len(self.run_deps_):
             print('RUN DEPS:')
             for pkg in self.run_deps_:
-                print(f"  {pkg.GetName()}@{pkg.version_['version']}")
+                print(f"  {pkg.get_name()}@{pkg.version_['version']}")
             print()
 
     """

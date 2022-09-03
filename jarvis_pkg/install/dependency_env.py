@@ -11,8 +11,8 @@ class DependencyEnvEntry:
         if conditions is not None:
             self.conditions += conditions
 
-    def GetName(self):
-        return self.pkg.GetClass()
+    def get_name(self):
+        return self.pkg.get_class()
 
 class DependencyEnvRow:
     def __init__(self):
@@ -25,9 +25,9 @@ class DependencyEnvRow:
         if self.order < order:
             self.order = order
         if self.name is None:
-            self.name = pkg.GetClass()
+            self.name = pkg.get_class()
 
-    def GetName(self):
+    def get_name(self):
         return self.name
 
     def list(self):
@@ -38,9 +38,9 @@ class DependencyEnv:
         self.nodes = {}
 
     def AddEntry(self, pkg, order, is_build_dep, parent, conditions):
-        if pkg.GetClass() not in self.nodes:
-            self.nodes[pkg.GetClass()] = DependencyEnvRow()
-        self.nodes[pkg.GetClass()].AddEntry(pkg, order, is_build_dep, parent, conditions)
+        if pkg.get_class() not in self.nodes:
+            self.nodes[pkg.get_class()] = DependencyEnvRow()
+        self.nodes[pkg.get_class()].AddEntry(pkg, order, is_build_dep, parent, conditions)
 
     def AddRow(self, pkgs, order):
         for pkg in pkgs:
@@ -54,10 +54,10 @@ class DependencyEnv:
     def _contains_condition(self, condition):
         if condition is None:
             return True
-        if condition.GetClass() not in self.nodes:
+        if condition.get_class() not in self.nodes:
             return False
-        for dep_entry in self.nodes[condition.GetClass()].row:
-            if not dep_entry.pkg.copy().Intersect(condition).IsNull():
+        for dep_entry in self.nodes[condition.get_class()].row:
+            if not dep_entry.pkg.copy().intersect(condition).is_null():
                 return True
         #print(f"Condition {condition.variants} failed")
         return False

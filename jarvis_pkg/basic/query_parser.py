@@ -64,7 +64,7 @@ class QueryParser:
         if pkg_class is None:
             raise Error(ErrorCode.UNKOWN_PACKAGE).format(pkg_name)
         pkg = pkg_class()
-        pkg.IntersectVersionRange(min,max)
+        pkg.intersect_version_range(min,max)
         return pkg
 
     def IsDep(self, tok):
@@ -90,35 +90,35 @@ class QueryParser:
         if '=' in variant:
             toks = variant.split('=')
             if len(toks) != 2:
-                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.GetName(), variant)
+                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
             key = toks[0]
             val = toks[1]
         elif '+' in variant:
             toks = variant.split('+')
             if len(toks) != 2:
-                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.GetName(), variant)
+                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
             key = toks[1]
             val = True
         elif '-' in variant or '~' in variant:
             toks = variant.split('-')
             if len(toks) != 2:
-                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.GetName(), variant)
+                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
             key = toks[1]
             val = False
         else:
-            raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.GetName(), variant)
+            raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
         return key,val
 
     def ParsePkgQuery(self, pkg_query, variants):
         root_pkg,build_deps,run_deps = self.SplitPkgDeps(pkg_query)
         root_pkg = self.ParsePkgDep(root_pkg)
         for pkg_dep in build_deps:
-            root_pkg.AddBuildDep(self.ParsePkgDep(pkg_dep))
+            root_pkg.add_build_dep(self.ParsePkgDep(pkg_dep))
         for pkg_dep in run_deps:
-            root_pkg.AddRunDep(self.ParsePkgDep(pkg_dep))
+            root_pkg.add_run_dep(self.ParsePkgDep(pkg_dep))
         for variant in variants:
             key,value = self.ParseVariant(root_pkg, variant)
-            root_pkg.SetVariant(key,value)
+            root_pkg.set_variant(key,value)
         return root_pkg
 
     def SplitPackages(self, query_str):
