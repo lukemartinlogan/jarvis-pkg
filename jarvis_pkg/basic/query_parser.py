@@ -77,6 +77,7 @@ class QueryParser:
         if pkg_class is None:
             raise Error(ErrorCode.UNKOWN_PACKAGE).format(pkg_name)
         pkg = pkg_class()
+        pkg.set_namespace(pkg_namespace)
         pkg.intersect_version_range(min,max)
         return pkg
 

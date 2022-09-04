@@ -6,7 +6,9 @@ class Gcc(Package):
     def define_versions(self):
         self.version('2.0',
                 distro=['debian', 'ubuntu', 'linux-mint'],
-                apt=['gcc', 'g++', 'gfortran', 'build-essential'])
+                pkg_list=['gcc', 'g++', 'gfortran', 'build-essential'],
+                installer='apt')
         self.version('2.0',
                 distro=['centos7', 'centos8'],
-                yum=['gcc', 'g++', 'gfortran'])
+                pkg_list=['gcc', 'g++', 'gfortran'],
+                installer='yum')

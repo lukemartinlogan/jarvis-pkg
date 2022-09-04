@@ -5,6 +5,7 @@ from .dependency_env import DependencyEnv
 class DependencyGraph:
     def __init__(self):
         self.jpkg_manager = JpkgManager.GetInstance()
+        self.install_schema = None
 
     def _get_install_environment(self, root_pkg, env, order=0, build_dep=False, parent=None, conditions=None, cycle_set=None):
         if cycle_set is None:
@@ -105,4 +106,13 @@ class DependencyGraph:
         """
         for pkg in install_schema:
             pkg.solidify_deps(final_env)
+        self.install_schema = install_schema #Ordered list of packages to install
         return install_schema
+
+    def install(self):
+        for pkg in self.install_schema:
+            phases = pkg.get_phases()
+            for phase in phases:
+                phase_fun = getattr(pkg, phase)
+                phase_fun()
+

@@ -20,6 +20,7 @@ class Package(ABC):
         self.default_variants = {}  # variant_name -> (variant_dict, condition)
         self.variants = {}  # variant_name -> variant_info_dict
         self.conflicts = []  # [(condition, condition, msg)]
+        self.install_methods = {} # method_name -> phase list
         self.jpkg_manager = JpkgManager.GetInstance()
 
         self.is_null_ = None
@@ -33,15 +34,9 @@ class Package(ABC):
         self.git = None
         self.branch = None
         self.commit = None
-        self.apt = None
-        self.yum = None
-        self.dnf = None
-        self.zypper = None
-        self.pacman = None
-        self.repo = None
+        self.pkg_list = None
+        self.repo_url = None
         self.gpg = None
-        self.pip = None
-        self.npm = None
 
         self.variant('prefer_stable', type=bool, default=True,
                      msg="Whether or not to prefer stable versions of packages when processing version ranges.")
@@ -60,15 +55,21 @@ class Package(ABC):
         pass
 
     def define_deps(self):
-        pass
+        for version_info in self.versions:
+            if version_info['git'] is not None:
+                self.depends_on('git')
+            if version_info['npm'] is not None:
+                self.depends_on('npm')
+            if version_info['pip'] is not None:
+                self.depends_on('python')
 
     def define_conflicts(self):
         pass
 
     def version(self, version_string, tag=None, help="", url=None,
                 git=None, branch=None, commit=None, submodules=False,
-                apt=None, yum=None, dnf=None, zypper=None, pacman=None, repo_url=None, gpg=None,
-                pip=None, npm=None, stable=True, distro=None):
+                pkg_list=None, repo_url=None, gpg=None,
+                stable=True, distro=None, installer='scratch'):
 
         if tag is None:
             tag = version_string
@@ -81,22 +82,12 @@ class Package(ABC):
         version_info['git'] = git if git is not None else self.git
         version_info['branch'] = branch if branch is not None else self.branch
         version_info['commit'] = commit if commit is not None else self.commit
-        version_info['apt'] = apt if apt is not None else self.apt
-        version_info['yum'] = yum if yum is not None else self.yum
-        version_info['dnf'] = dnf if dnf is not None else self.dnf
-        version_info['zypper'] = zypper if zypper is not None else self.zypper
-        version_info['pacman'] = pacman if pacman is not None else self.pacman
-        version_info['repo_url'] = repo_url if repo_url is not None else self.repo
+        version_info['submodules'] = submodules
+        version_info['distro'] = distro
+        version_info['pkg_list'] = pkg_list if pkg_list is not None else self.pkg_list
+        version_info['repo_url'] = repo_url if repo_url is not None else self.repo_url
         version_info['gpg'] = gpg if gpg is not None else self.gpg
-        version_info['pip'] = pip if pip is not None else self.pip
-        version_info['npm'] = npm if npm is not None else self.npm
-
-        if version_info['git'] is not None:
-            self.depends_on('git')
-        if version_info['npm'] is not None:
-            self.depends_on('npm')
-        if version_info['pip'] is not None:
-            self.depends_on('python')
+        version_info['installer'] = installer
 
         self.versions.append(version_info)
         self.version_set.add(version_info['version'])
@@ -138,9 +129,23 @@ class Package(ABC):
             query_b = QueryParser(query_b).parse()
         self.conflicts.append((query_a, query_b))
 
+    def phases(self, ps, installer='scratch'):
+        self.install_methods[installer] = ps
+        for phase in ps:
+            if not hasattr(self, phase):
+                raise Error(ErrorCode.PACKAGE_PHASE_UNDEFINED).format(
+                    phase, self.get_namespace(), self.get_name())
+
+
     """
     Package Modification
     """
+
+    def set_namespace(self, namespace):
+        self.namespace = namespace
+
+    def get_namespace(self):
+        return self.namespace
 
     def get_name(self):
         return self.name
@@ -153,6 +158,9 @@ class Package(ABC):
 
     def get_class(self):
         return self.pclass
+
+    def get_phases(self):
+        return self.install_methods[self.version_['installer']]
 
     def intersect_version_range(self, min, max):
         if isinstance(min, str):
@@ -310,7 +318,7 @@ class Package(ABC):
 
     def print(self):
         # Print versions
-        print(f"----------{self.get_name()}---------")
+        print(f"----------{self.get_namespace()}.{self.get_name()}---------")
         if len(self.versions):
             print('VERSIONS:')
             for version_info in self.versions:

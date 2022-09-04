@@ -42,3 +42,5 @@ class ErrorCode:
     MALFORMED_VARIANT = {"id": 202, "msg": "Malformed variant in package query {}: {}"}
     MULTIPLE_VERSIONS_IN_QUERY = {"id": 203, "msg": "Multiple versions specified for a single package query {}"}
 
+    # Package definition
+    PACKAGE_PHASE_UNDEFINED = {"id": 300, "msg": "Phase {} in {}.{} was not defined"}

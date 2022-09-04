@@ -9,14 +9,14 @@ QueryParser('jpkg_builtin.orangefs@2.9.8%gcc@9.2^gcc@9.2 v1=1 +v2 -v3 ~v4').pars
 try:
     QueryParser('orangefs@2.9.1%gcc@').parse().print()
 except:
-    print("It failed")
+    print("orangefs@2.9.1%gcc@ failed")
 
 try:
     QueryParser('orangefs@2.9.1%').parse().print()
 except:
-    print("It failed")
+    print("orangefs@2.9.1% failed")
 
 try:
     QueryParser('orangefs@').parse().print()
 except:
-    print("It failed")
+    print("orangefs@ failed")
