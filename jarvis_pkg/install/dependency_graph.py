@@ -107,7 +107,11 @@ class DependencyGraph:
         for pkg in install_schema:
             pkg.solidify_deps(final_env)
         self.install_schema = install_schema #Ordered list of packages to install
-        return install_schema
+        return self
+
+    def print(self):
+        for pkg in self.install_schema:
+            pkg.print()
 
     def install(self):
         for pkg in self.install_schema:
