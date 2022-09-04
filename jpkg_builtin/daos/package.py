@@ -5,19 +5,20 @@ import os
 
 class Daos(SConsPackage,CPackage,CppPackage):
     def define_versions(self):
+        super().define_versions()
         #Distro package managers
         self.version('2.0',
                 distro='centos8',
                 pkg_list=['epel-release', 'daos-server', 'daos-client'],
                 repo_url='https://packages.daos.io/v2.0/EL8/packages/x86_64/daos_packages.repo',
                 gpg='https://packages.daos.io/RPM-GPG-KEY',
-                installer='yum')
+                install='yum')
         self.version('2.0',
                 distro='centos7',
                 pkg_list=['epel-release', 'daos-server', 'daos-client'],
                 repo_url='https://packages.daos.io/v2.0/CentOS7/packages/x86_64/daos_packages.repo',
                 gpg='https://packages.daos.io/RPM-GPG-KEY',
-                installer='yum')
+                install='yum')
 
         #Source build versions
         self.version('3.0.0', tag='master', git="https://github.com/daos-stack/daos.git", branch='release/2.0', submodules=True)
@@ -35,6 +36,7 @@ class Daos(SConsPackage,CPackage,CppPackage):
         #self.depends_on('pyyaml')
         #self.depends_on('pyelftools')
 
+    @conf('scons')
     def build_args(self, spec, prefix):
         args = [
             "PREFIX={}".format(prefix),

@@ -7,9 +7,10 @@ class Orangefs(AutotoolsPackage):
     def define_versions(self):
         self.version('2.9.8', url='http://download.orangefs.org/current/source/orangefs-2.9.8.tar.gz')
 
+    @conf('autotools')
     def configure_args(self, spec, prefix):
         args = []
-        if self.spec['orangefs']:
+        if spec['orangefs']:
             args += [
                 f"--enable-fast=O3",
                 f"--enable-romio",

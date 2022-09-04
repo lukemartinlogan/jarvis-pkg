@@ -1,7 +1,7 @@
 
 from jarvis_cd import *
 from jarvis_pkg.package.make_package import MakeNode,MakeInstallNode
-from jarvis_pkg.package.package import Package
+from jarvis_pkg.package.package import *
 
 class CMakeNode(ExecNode):
     def __init__(self, args=[], path=None):
@@ -15,23 +15,24 @@ class CMakeNode(ExecNode):
         super().__init__(cmds, shell=True)
 
 class AutotoolsPackage(Package):
-    def define_versions(self):
-        self.phases = ['autoreconf', 'autogen', 'configure', 'build', 'install']
-
     def define_deps(self):
         self.depends_on('make')
 
+    @phase('autotools')
     def autoreconf(self):
         cmd = f"autoreconf -ivf"
         ExecNode(cmd)
 
+    @phase('autotools')
     def autogen(self):
         cmd = f"./autogen.sh"
         ExecNode(cmd, shell=True)
 
+    @conf('autotools')
     def configure_args(self, spec, prefix):
         return []
 
+    @phase('autotools')
     def configure(self, spec, prefix):
         args = [
             f"--prefix={prefix}",
@@ -41,8 +42,10 @@ class AutotoolsPackage(Package):
         cmd = f"./configure {args}"
         ExecNode(cmd).Run()
 
+    @phase('autotools')
     def build(self, spec, prefix):
         MakeNode().Run()
 
+    @phase('autotools')
     def install(self, spec, prefix):
         MakeInstallNode().Run()

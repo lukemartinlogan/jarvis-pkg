@@ -5,6 +5,45 @@ from jarvis_pkg.basic.version import Version
 from jarvis_pkg.basic.query_parser import QueryParser
 from abc import ABC,abstractmethod
 
+
+def modify_phases(self, class_f,
+                  install, needs_root,
+                  args, kwargs, phase_dict):
+    in_init = False
+    if 'in_init' in kwargs:
+        in_init = kwargs['in_init']
+    if in_init:
+        if install not in phase_dict:
+            phase_dict[install] = (needs_root, [])
+        if needs_root:
+            phase_dict[install][0] = needs_root
+        phase_dict[install][1].append(class_f)
+    else:
+        class_f(self, *args, **kwargs)
+
+
+def phase(install=None, needs_root=False):
+    def wrap(class_f):
+        def _phase_impl(*args, **kwargs):
+            self = args[0]
+            modify_phases(self, class_f,
+                          install, needs_root,
+                          args, kwargs, self.phases)
+        return _phase_impl
+    return wrap
+
+
+def conf(install=None):
+    def wrap(class_f):
+        def _phase_impl(*args, **kwargs):
+            self = args[0]
+            modify_phases(self, class_f,
+                          install, False,
+                          args, kwargs, self.phase_confs)
+        return _phase_impl
+    return wrap
+
+
 class Package(ABC):
     def __init__(self):
         self.name = self.__class__.__name__
@@ -20,7 +59,9 @@ class Package(ABC):
         self.default_variants = {}  # variant_name -> (variant_dict, condition)
         self.variants = {}  # variant_name -> variant_info_dict
         self.conflicts = []  # [(condition, condition, msg)]
-        self.install_methods = {} # method_name -> phase list
+        self.phases = {}  # install -> (needs_root, list of phases)
+        self.phase_confs = {}  # install -> (needs_root, list of phase configure options)
+        self.install = None
         self.jpkg_manager = JpkgManager.GetInstance()
 
         self.is_null_ = None
@@ -37,6 +78,11 @@ class Package(ABC):
         self.pkg_list = None
         self.repo_url = None
         self.gpg = None
+
+        for value in self.__class__.__dict__.values():
+            if callable(value):
+                if value.__name__ == '_phase_impl':
+                    value(self, in_init=True)
 
         self.variant('prefer_stable', type=bool, default=True,
                      msg="Whether or not to prefer stable versions of packages when processing version ranges.")
@@ -69,8 +115,7 @@ class Package(ABC):
     def version(self, version_string, tag=None, help="", url=None,
                 git=None, branch=None, commit=None, submodules=False,
                 pkg_list=None, repo_url=None, gpg=None,
-                stable=True, distro=None, installer='scratch'):
-
+                stable=True, distro=None, install=None):
         if tag is None:
             tag = version_string
         version_info = {}
@@ -87,7 +132,12 @@ class Package(ABC):
         version_info['pkg_list'] = pkg_list if pkg_list is not None else self.pkg_list
         version_info['repo_url'] = repo_url if repo_url is not None else self.repo_url
         version_info['gpg'] = gpg if gpg is not None else self.gpg
-        version_info['installer'] = installer
+        version_info['install'] = install if install is not None else self.install
+
+        if len(self.phases) != 0 or install is not None:
+            if install not in self.phases:
+                raise Error(ErrorCode.INSTALLER_UNDEFINED).format(
+                    install, self.namespace, self.name)
 
         self.versions.append(version_info)
         self.version_set.add(version_info['version'])
@@ -129,14 +179,6 @@ class Package(ABC):
             query_b = QueryParser(query_b).parse()
         self.conflicts.append((query_a, query_b))
 
-    def phases(self, ps, installer='scratch'):
-        self.install_methods[installer] = ps
-        for phase in ps:
-            if not hasattr(self, phase):
-                raise Error(ErrorCode.PACKAGE_PHASE_UNDEFINED).format(
-                    phase, self.get_namespace(), self.get_name())
-
-
     """
     Package Modification
     """
@@ -160,7 +202,16 @@ class Package(ABC):
         return self.pclass
 
     def get_phases(self):
-        return self.install_methods[self.version_['installer']]
+        return self.phases[self.version_['install']][1]
+
+    def get_phase_methods(self):
+        install = self.version_['install']
+        if len(self.phases) == 0 and install is None:
+            return []
+        methods = self.phases[install][1].copy()
+        if install in self.phase_confs:
+            methods += self.phase_confs[install][1]
+        return methods
 
     def intersect_version_range(self, min, max):
         if isinstance(min, str):
@@ -220,9 +271,8 @@ class Package(ABC):
     def is_null(self):
         return self.is_null_ is not None
 
-    @staticmethod
-    def is_scratch(v_info):
-        return v_info['git'] is None or v_info['url'] is None
+    def needs_root(self, v_info):
+        return self.phases[v_info['installer']][0]
 
     @staticmethod
     def _solidify_deps(cur_env, deps):
@@ -241,7 +291,7 @@ class Package(ABC):
 
         #Check if a matching package is already installed
         if not self.variants['introspect']:
-            self.versions = [v_info for v_info in self.versions if self.is_scratch(v_info)]
+            self.versions = [v_info for v_info in self.versions if self.needs_root(v_info)]
         if self.solidify_from_existing():
             return
 
@@ -269,6 +319,10 @@ class Package(ABC):
             p2 = query_b in cur_env
             if p1 and p2:
                 raise Error(ErrorCode.CONFLICT).format(msg)
+
+        # Set phase definitions
+        for method in self.get_phase_methods():
+            setattr(self, method.__name__, method)
 
         self.is_solidified_ = True
 
@@ -304,8 +358,13 @@ class Package(ABC):
     def __repr__(self):
         return str(self.dict())
 
-    def copy(self):
-        new_pkg = self.__class__()
+    def copy(self, new_pkg=None):
+        if new_pkg is None:
+            new_pkg = self.__class__()
+
+        new_pkg.name = self.name
+        new_pkg.pclass = self.pclass
+        new_pkg.namespace = self.namespace
         new_pkg.versions = self.versions.copy()
         new_pkg.version_set = self.version_set.copy()
         new_pkg.all_build_deps = self.all_build_deps.copy()
@@ -313,7 +372,20 @@ class Package(ABC):
         new_pkg.build_deps = self.build_deps.copy()
         new_pkg.run_deps = self.run_deps.copy()
         new_pkg.patches = self.patches.copy()
+        new_pkg.default_variants = self.default_variants.copy()
         new_pkg.variants = self.variants.copy()
+        new_pkg.conflicts = self.conflicts.copy()
+        new_pkg.install = self.install
+        new_pkg.jpkg_manager = self.jpkg_manager
+        new_pkg.phases = self.phases.copy()
+        new_pkg.phase_confs = self.phase_confs.copy()
+        if self.is_solidified_:
+            new_pkg.is_null_ = self.is_null_
+            new_pkg.version_ = self.version_
+            new_pkg.patches_ = self.patches_.copy()
+            new_pkg.build_deps_ = self.build_deps_.copy()
+            new_pkg.run_deps_ = self.run_deps_.copy()
+            new_pkg.is_solidified_ = self.is_solidified_
         return new_pkg
 
     def print(self):
@@ -322,7 +394,7 @@ class Package(ABC):
         if len(self.versions):
             print('VERSIONS:')
             for version_info in self.versions:
-                print(f"  {version_info['version']}")
+                print(f"  {version_info['version']} ({version_info['install']})")
         if len(self.variants):
             print('VARIANTS:')
             for key,val in self.variants.items():

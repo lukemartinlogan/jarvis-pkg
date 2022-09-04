@@ -1,7 +1,6 @@
 
 from jarvis_cd import *
-from jarvis_pkg.package.package import Package
-
+from jarvis_pkg.package.package import *
 
 class MakeNode(ExecNode):
     def __init__(self, path=None, jobs=8, *args):
@@ -21,14 +20,14 @@ class MakeInstallNode(ExecNode):
         super().__init__(cmds, shell=True)
 
 class MakePackage(Package):
-    def define_versions(self):
-        self.phases = ['build', 'install']
-
     def define_deps(self):
+        super().define_deps()
         self.depends_on('make')
 
+    @phase('make')
     def build(self, spec, prefix):
         MakeNode().Run()
 
+    @phase('make')
     def install(self, spec, prefix):
         MakeInstallNode().Run()

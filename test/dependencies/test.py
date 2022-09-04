@@ -12,14 +12,31 @@ class A(Package):
     """
     def define_versions(self):
         self.version('v2.0.0')
-        self.version('v1.5.0')
-        self.version('v1.0.0')
+        self.version('v1.5.0', install='m1')
+        self.version('v1.2.0', install='m2')
+        self.version('v1.0.0', install='m3')
 
     def define_deps(self):
         pass
 
     def define_conflicts(self):
         pass
+
+    @phase()
+    def method0(self, spec, prefix):
+        print('here0')
+
+    @phase('m1')
+    def method1(self, spec, prefix):
+        print('here1')
+
+    @phase('m2')
+    def method2(self, spec, prefix):
+        print('here2')
+
+    @phase('m3')
+    def method3(self, spec, prefix):
+        print('here3')
 
 
 class B(Package):
@@ -129,6 +146,7 @@ def run_test():
         if pkg.get_name() == 'A':
             if pkg.version_['version'] != Version('v1.5.0'):
                 print(f"A has the wrong version: {pkg.version_['version']}")
+    print_schema(schema)
 
 
 run_test()

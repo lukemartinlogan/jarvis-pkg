@@ -11,6 +11,7 @@ class Mpich(AutotoolsPackage):
         self.variant('pvfs2', default=False, msg="Install the OrangeFS-specific mpich")
         self.depends_on('orangefs')
 
+    @conf('autotools')
     def configure_args(self, spec, prefix):
         args = []
         if self.spec['orangefs']:

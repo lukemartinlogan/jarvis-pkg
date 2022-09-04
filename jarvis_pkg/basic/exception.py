@@ -44,3 +44,4 @@ class ErrorCode:
 
     # Package definition
     PACKAGE_PHASE_UNDEFINED = {"id": 300, "msg": "Phase {} in {}.{} was not defined"}
+    INSTALLER_UNDEFINED = {"id": 301, "msg": "The installer {} in {}.{} was not defined"}

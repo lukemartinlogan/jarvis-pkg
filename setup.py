@@ -7,7 +7,7 @@ setuptools.setup(
     version="0.0.1",
     author="Luke Logan",
     author_email="llogan@hawk.iit.edu",
-    description="An installer for applications",
+    description="An install for applications",
     url="https://github.com/lukemartinlogan/jarvis-pkg",
     classifiers = [
         "Programming Language :: Python",
@@ -18,7 +18,7 @@ setuptools.setup(
         "License :: None",
         "Operating System :: OS Independent",
         "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: Installer",
+        "Topic :: install",
     ],
     long_description=""
 )
