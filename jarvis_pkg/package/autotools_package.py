@@ -16,6 +16,7 @@ class CMakeNode(ExecNode):
 
 class AutotoolsPackage(Package):
     def define_deps(self):
+        super().define_deps()
         self.depends_on('make')
 
     @phase('autotools')

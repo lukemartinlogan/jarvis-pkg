@@ -5,4 +5,4 @@ import os
 
 class Git(Package,CPackage,CppPackage):
     def define_versions(self):
-        pass
+        super().define_versions()

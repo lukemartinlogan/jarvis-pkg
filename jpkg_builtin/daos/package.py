@@ -3,7 +3,7 @@ from jarvis_pkg import *
 import shutil
 import os
 
-class Daos(SConsPackage,CPackage,CppPackage):
+class Daos(SConsPackage,CPackage,CppPackage,YumPackage):
     def define_versions(self):
         super().define_versions()
         #Distro package managers

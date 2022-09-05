@@ -5,6 +5,7 @@ import os
 class Io500(Package):
     #Versions
     def define_versions(self):
+        super().define_versions()
         self.version('isc22',
                      git='https://github.com/IO500/io500.git',
                      branch='io500-isc22')

@@ -4,6 +4,7 @@ from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.basic.version import Version
 from jarvis_pkg.basic.query_parser import QueryParser
 from abc import ABC,abstractmethod
+import re
 
 
 def modify_phases(self, class_f,
@@ -45,6 +46,16 @@ def conf(install=None):
 
 
 class Package(ABC):
+    def default_installer(self):
+        if self.__class__.__name__ == 'Package':
+            return None
+        install = self.__class__.__mro__[1].__name__
+        install = re.search('([a-zA-Z0-9]*)Package', install).group(1)
+        install = ToSnakeCase(install)
+        if len(install) == 0:
+            install = None
+        return install
+
     def __init__(self):
         self.name = self.__class__.__name__
         self.pclass = self.name
@@ -61,7 +72,7 @@ class Package(ABC):
         self.conflicts = []  # [(condition, condition, msg)]
         self.phases = {}  # install -> (needs_root, list of phases)
         self.phase_confs = {}  # install -> (needs_root, list of phase configure options)
-        self.install = None
+        self.install = self.default_installer()
         self.jpkg_manager = JpkgManager.GetInstance()
 
         self.is_null_ = None
@@ -79,10 +90,11 @@ class Package(ABC):
         self.repo_url = None
         self.gpg = None
 
-        for value in self.__class__.__dict__.values():
-            if callable(value):
-                if value.__name__ == '_phase_impl':
-                    value(self, in_init=True)
+        for superclass in self.__class__.__mro__:
+            for value in superclass.__dict__.values():
+                if callable(value):
+                    if value.__name__ == '_phase_impl':
+                        value(self, in_init=True)
 
         self.variant('prefer_stable', type=bool, default=True,
                      msg="Whether or not to prefer stable versions of packages when processing version ranges.")
@@ -134,10 +146,10 @@ class Package(ABC):
         version_info['gpg'] = gpg if gpg is not None else self.gpg
         version_info['install'] = install if install is not None else self.install
 
-        if len(self.phases) != 0 or install is not None:
-            if install not in self.phases:
+        if len(self.phases) != 0 or version_info['install'] is not None:
+            if version_info['install'] not in self.phases:
                 raise Error(ErrorCode.INSTALLER_UNDEFINED).format(
-                    install, self.namespace, self.name)
+                    version_info['install'], self.namespace, self.name)
 
         self.versions.append(version_info)
         self.version_set.add(version_info['version'])

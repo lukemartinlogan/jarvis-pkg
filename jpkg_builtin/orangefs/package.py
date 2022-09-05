@@ -5,6 +5,7 @@ import os
 
 class Orangefs(AutotoolsPackage):
     def define_versions(self):
+        super().define_versions()
         self.version('2.9.8', url='http://download.orangefs.org/current/source/orangefs-2.9.8.tar.gz')
 
     @conf('autotools')

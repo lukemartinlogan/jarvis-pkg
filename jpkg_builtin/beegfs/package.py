@@ -2,7 +2,7 @@ from jarvis_cd import *
 from jarvis_pkg import *
 
 
-class Beegfs(Package):
+class Beegfs(Package,YumPackage):
     def define_versions(self):
         super().define_versions()
         self.version('7.3.1',
