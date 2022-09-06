@@ -45,3 +45,5 @@ class ErrorCode:
     # Package definition
     PACKAGE_PHASE_UNDEFINED = {"id": 300, "msg": "Phase {} in {}.{} was not defined"}
     INSTALLER_UNDEFINED = {"id": 301, "msg": "The installer {} in {}.{} was not defined"}
+    REQUIRE_INTROSPECT = {"id": 302, "msg": "Introspect disabled for {}.{}, but not satisifiable version"}
+    CLASS_NOT_FOUND = {"id": 303, "msg": "Class {} was not found in any namespace"}

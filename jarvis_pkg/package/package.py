@@ -7,7 +7,7 @@ from abc import ABC,abstractmethod
 import re
 
 
-def modify_phases(self, class_f,
+def multiparam_decor(self, class_f,
                   install, needs_root,
                   args, kwargs, phase_dict):
     in_init = False
@@ -25,25 +25,34 @@ def modify_phases(self, class_f,
 
 def phase(install=None, needs_root=False):
     def wrap(class_f):
-        def _phase_impl(*args, **kwargs):
+        def _jpkg_decor_impl(*args, **kwargs):
             self = args[0]
-            modify_phases(self, class_f,
+            multiparam_decor(self, class_f,
                           install, needs_root,
                           args, kwargs, self.phases)
-        return _phase_impl
+        return _jpkg_decor_impl
     return wrap
 
 
 def conf(install=None):
     def wrap(class_f):
-        def _phase_impl(*args, **kwargs):
+        def _jpkg_decor_impl(*args, **kwargs):
             self = args[0]
-            modify_phases(self, class_f,
+            multiparam_decor(self, class_f,
                           install, False,
                           args, kwargs, self.phase_confs)
-        return _phase_impl
+        return _jpkg_decor_impl
     return wrap
 
+def introspect(install=None, needs_root=False):
+    def wrap(class_f):
+        def _jpkg_decor_impl(*args, **kwargs):
+            self = args[0]
+            multiparam_decor(self, class_f,
+                          install, needs_root,
+                          args, kwargs, self.introspect)
+        return _jpkg_decor_impl
+    return wrap
 
 class Package(ABC):
     def default_installer(self):
@@ -60,6 +69,7 @@ class Package(ABC):
         self.name = self.__class__.__name__
         self.pclass = self.name
         self.namespace = None
+        self.is_required = True
         self.versions = []   # [version_info_dict]
         self.version_set = set()  # set of versions
         self.all_build_deps = []
@@ -70,17 +80,22 @@ class Package(ABC):
         self.default_variants = {}  # variant_name -> (variant_dict, condition)
         self.variants = {}  # variant_name -> variant_info_dict
         self.conflicts = []  # [(condition, condition, msg)]
-        self.phases = {}  # install -> (needs_root, list of phases)
-        self.phase_confs = {}  # install -> (needs_root, list of phase configure options)
+        self.phases = {}  # install -> (needs_root, [@phase])
+        self.phase_confs = {}  # install -> (needs_root, [@conf])
+        self.introspect = {} #install -> (needs_root, [@introspect])
         self.install = self.default_installer()
-        self.jpkg_manager = JpkgManager.GetInstance()
+        self.jpkg_manager = JpkgManager.get_instance()
 
         self.is_null_ = None
+        self.prefix_ = None
         self.version_ = None
         self.patches_ = None # [patches]
         self.build_deps_ = None # [pkg]
         self.run_deps_ = None # [pkg]
+        self.variants_ = self.variants
+        self.install_ = self.install
         self.is_solidified_ = False
+        self.is_installed_ = False
 
         self.url = None
         self.git = None
@@ -93,13 +108,13 @@ class Package(ABC):
         for superclass in self.__class__.__mro__:
             for value in superclass.__dict__.values():
                 if callable(value):
-                    if value.__name__ == '_phase_impl':
+                    if value.__name__ == '_jpkg_decor_impl':
                         value(self, in_init=True)
 
         self.variant('prefer_stable', type=bool, default=True,
                      msg="Whether or not to prefer stable versions of packages when processing version ranges.")
         self.variant('introspect', type=bool, default=True,
-                     msg="Whether or not to check if a package is already installed externally.")
+                     msg="Allow checking if packages are installed externally.")
         self.variant('prefer_scratch', type=bool, default=True,
                      msg="If a package is not installed, whether or not to build from source or"
                          "install using a different package manager")
@@ -169,15 +184,19 @@ class Package(ABC):
         deps[pkg.get_class()].append((pkg, when))
         all_deps.append((pkg, when))
 
-    def depends_on(self, pkg, when=None, time='run'):
-        if isinstance(pkg, str):
-            pkg = QueryParser(pkg).parse()
+    def depends_on(self, pkgs, when=None, time='run'):
+        if isinstance(pkgs, str):
+            pkgs = QueryParser(pkgs).parse()
         if isinstance(when, str):
             when = QueryParser(when).parse()
-        if time == 'run':
-            self._depends_on(pkg, when, self.run_deps, self.all_run_deps)
-        elif time == 'build':
-            self._depends_on(pkg, when, self.build_deps, self.all_build_deps)
+        if not isinstance(pkgs, list):
+            pkgs = [pkgs]
+        for pkg in pkgs:
+            pkg.is_required = (len(pkgs) == 1)
+            if time == 'run':
+                self._depends_on(pkg, when, self.run_deps, self.all_run_deps)
+            elif time == 'build':
+                self._depends_on(pkg, when, self.build_deps, self.all_build_deps)
 
     def patch(self, path, when=None):
         if isinstance(when, str):
@@ -213,11 +232,26 @@ class Package(ABC):
     def get_class(self):
         return self.pclass
 
+    def get_id(self):
+        return f"{self.namespace}.{self.name}"
+
     def get_phases(self):
         return self.phases[self.version_['install']][1]
 
-    def get_phase_methods(self):
-        install = self.version_['install']
+    def get_versions(self, install):
+        vs = []
+        for v_info in self.versions:
+            if v_info['install'] == install:
+                vs.append(v_info)
+        return vs
+
+    def get_introspect(self, install):
+        if install not in self.introspect:
+            return None
+        return self.introspect[install][1]
+
+    def get_install_methods(self):
+        install = self.install_
         if len(self.phases) == 0 and install is None:
             return []
         methods = self.phases[install][1].copy()
@@ -283,41 +317,89 @@ class Package(ABC):
     def is_null(self):
         return self.is_null_ is not None
 
+    def is_class(self):
+        return self.pclass is not None and self.name is None
+
     def needs_root(self, v_info):
         return self.phases[v_info['installer']][0]
 
-    @staticmethod
-    def _solidify_deps(cur_env, deps):
-        new_deps = []
-        for pkg_name, pkg_row in deps.items():
-            for pkg, condition in pkg_row:
-                if condition in cur_env:
-                    new_deps.append(cur_env.find_pkg(cur_env, pkg))
-        return new_deps
-
-    def solidify_version(self):
-        #Solidify variants
-        for key,val in self.default_variants.items():
+    def _solidify_variants(self):
+        for key, val in self.default_variants.items():
             if key not in self.variants:
                 self.variants[key] = val
+        self.variants_ = self.variants
 
-        #Check if a matching package is already installed
+    def _solidify_installer(self, install=None):
+        if install is None:
+            install = self.version_['install']
+        self.install_ = install
+        for method in self.get_install_methods():
+            setattr(self, method.__name__, method)
+
+    def _solidify_from_existing(self):
+        return False
+        if self in self.jpkg_manager.install_env:
+            pkgs = self.jpkg_manager.install_env.find(self)
+            self.copy(pkgs[0])
+            return True
+        return False
+
+    def _solidify_from_introspect(self):
         if not self.variants['introspect']:
-            self.versions = [v_info for v_info in self.versions if self.needs_root(v_info)]
-        if self.solidify_from_existing():
+            versions = [v_info for v_info in self.versions if self.needs_root(v_info)]
+            if len(versions) == 0:
+                raise Error(ErrorCode.REQUIRE_INTROSPECT).format(
+                    self.get_namespace(), self.get_name()
+                )
+            self.versions = versions
+            return False
+        for install in self.phases.keys():
+            versions = self.get_versions(install)
+            method = self.get_introspect(install)
+            if method is not None and len(versions) > 0:
+                self._solidify_installer(install)
+                v_info = method(self, versions)
+                if v_info is not None:
+                    self.version_ = v_info
+                    return True
+        return False
+
+    def solidify_version(self):
+        if self.is_solidified_:
+            return
+        if self._solidify_from_existing():
             return
 
-        #Solidify version
+        self._solidify_variants()
+        if self._solidify_from_introspect():
+            self.versions = [self.version_]
+            self._solidify_installer()
+            return
+
         if self.variants['prefer_stable']:
             versions = [v_info for v_info in self.versions if v_info['stable']]
             if len(versions) > 0:
                 self.versions = versions
         self.versions.sort(key=lambda x: x['version'])
         self.versions = [self.versions[-1]]
+        self.version_ = self.versions[-1]
+        self._solidify_installer()
+
+    @staticmethod
+    def _solidify_deps(cur_env, deps, new_deps=None):
+        if new_deps is None:
+            new_deps = []
+        for dep_pkg_row in deps.values():
+            for dep_pkg_query, condition in dep_pkg_row:
+                if condition in cur_env:
+                    dep_pkgs = cur_env.find(cur_env, dep_pkg_query)
+                    new_deps.append(dep_pkgs[0])
+        return new_deps
 
     def solidify_deps(self, cur_env):
+        if self.is_solidified_:
+            return
         # Solidify dependencies
-        self.version_ = self.versions[-1]
         self.patches_ = [patch_info for patch_info, condition in self.patches if condition in cur_env]
         self.build_deps_ = self._solidify_deps(cur_env, self.build_deps)
         self.run_deps_ = self._solidify_deps(cur_env, self.run_deps)
@@ -332,15 +414,8 @@ class Package(ABC):
             if p1 and p2:
                 raise Error(ErrorCode.CONFLICT).format(msg)
 
-        # Set phase definitions
-        for method in self.get_phase_methods():
-            setattr(self, method.__name__, method)
-
         self.is_solidified_ = True
 
-    def solidify_from_existing(self):
-        #Check if a package with this version range and these variants are installed
-        return False
     def filter_build_deps(self, build_deps):
         pass
     def filter_run_deps(self, run_deps):
@@ -353,6 +428,27 @@ class Package(ABC):
     """
     Standard Library
     """
+    @staticmethod
+    def _prefix_deps(deps):
+        prefixes = [dep.prefix_ for dep in deps]
+
+    def _get_variant_kv(self):
+        return {key: v_info['value'] for key, v_info in self.variants_}
+
+    def prefix(self):
+        sig = [
+            str(self.namespace),
+            str(self.name),
+            str(self.pclass),
+            str(self.version_),
+            str(self._prefix_deps(self.run_deps_)),
+            str(self._prefix_deps(self.build_deps)),
+            str(self._get_variant_kv()),
+            str(self.jpkg_manager.sys_hash)
+        ]
+        self.prefix_ = hash(";".join(sig))
+        return self.prefix_
+
     def dict(self):
         return {
             'versions': self.versions,
@@ -370,35 +466,41 @@ class Package(ABC):
     def __repr__(self):
         return str(self.dict())
 
-    def copy(self, new_pkg=None):
-        if new_pkg is None:
-            new_pkg = self.__class__()
-
-        new_pkg.name = self.name
-        new_pkg.pclass = self.pclass
-        new_pkg.namespace = self.namespace
-        new_pkg.versions = self.versions.copy()
-        new_pkg.version_set = self.version_set.copy()
-        new_pkg.all_build_deps = self.all_build_deps.copy()
-        new_pkg.all_run_deps = self.all_run_deps.copy()
-        new_pkg.build_deps = self.build_deps.copy()
-        new_pkg.run_deps = self.run_deps.copy()
-        new_pkg.patches = self.patches.copy()
-        new_pkg.default_variants = self.default_variants.copy()
-        new_pkg.variants = self.variants.copy()
-        new_pkg.conflicts = self.conflicts.copy()
-        new_pkg.install = self.install
-        new_pkg.jpkg_manager = self.jpkg_manager
-        new_pkg.phases = self.phases.copy()
-        new_pkg.phase_confs = self.phase_confs.copy()
-        if self.is_solidified_:
-            new_pkg.is_null_ = self.is_null_
-            new_pkg.version_ = self.version_
-            new_pkg.patches_ = self.patches_.copy()
-            new_pkg.build_deps_ = self.build_deps_.copy()
-            new_pkg.run_deps_ = self.run_deps_.copy()
-            new_pkg.is_solidified_ = self.is_solidified_
-        return new_pkg
+    def copy(self, src_pkg=None):
+        if src_pkg is None:
+            dst_pkg = self.__class__()
+            src_pkg = self
+        else:
+            dst_pkg = self
+        dst_pkg.name = src_pkg.name
+        dst_pkg.pclass = src_pkg.pclass
+        dst_pkg.namespace = src_pkg.namespace
+        dst_pkg.versions = src_pkg.versions.copy()
+        dst_pkg.version_set = src_pkg.version_set.copy()
+        dst_pkg.all_build_deps = src_pkg.all_build_deps.copy()
+        dst_pkg.all_run_deps = src_pkg.all_run_deps.copy()
+        dst_pkg.build_deps = src_pkg.build_deps.copy()
+        dst_pkg.run_deps = src_pkg.run_deps.copy()
+        dst_pkg.patches = src_pkg.patches.copy()
+        dst_pkg.default_variants = src_pkg.default_variants.copy()
+        dst_pkg.variants = src_pkg.variants.copy()
+        dst_pkg.conflicts = src_pkg.conflicts.copy()
+        dst_pkg.install = src_pkg.install
+        dst_pkg.jpkg_manager = src_pkg.jpkg_manager
+        dst_pkg.phases = src_pkg.phases.copy()
+        dst_pkg.phase_confs = src_pkg.phase_confs.copy()
+        dst_pkg.is_installed_ = src_pkg.is_installed_
+        if src_pkg.is_solidified_:
+            dst_pkg.is_null_ = src_pkg.is_null_
+            dst_pkg.version_ = src_pkg.version_
+            dst_pkg.variants_ = src_pkg.variants_
+            dst_pkg.install_ = src_pkg.install_
+            dst_pkg.patches_ = src_pkg.patches_.copy()
+            dst_pkg.build_deps_ = src_pkg.build_deps_.copy()
+            dst_pkg.run_deps_ = src_pkg.run_deps_.copy()
+            dst_pkg.prefix_ = src_pkg.prefix_
+            dst_pkg.is_solidified_ = src_pkg.is_solidified_
+        return dst_pkg
 
     def print(self):
         # Print versions

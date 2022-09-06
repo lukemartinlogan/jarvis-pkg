@@ -3,18 +3,19 @@
 """
 USAGE:
 
-jpkg install pkg_name@version variant=a variant=b --with-variant ^ dep_name variant@version = a ^ dep_name ...
-jpkg install [--force-scrath, --prefer-scratch, --prefer-sys, --force-sys]
+jpkg install pkg_name@version variant=a variant=b +variant -variant ^ dep_name variant@version = a ^ dep_name ...
 """
 
-from jarvis_cd.jarvis_manager import JarvisManager
+from jarvis_pkg.basic.jpkg_manager import JpkgManager
 import argparse
 from enum import Enum
 import sys
 
 class JarvisPkgOp(Enum):
+    REGISTER = "register"
     INSTALL = "install"
     UNINSTALL = "uninstall"
+    UPDATE = "update"
     LOAD = "load"
     LIST = "list"
     FIND = "find"
@@ -24,4 +25,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='jpkg')
     parser.add_argument('op', metavar='operation', type=JarvisPkgOp, choices=list(JarvisPkgOp), help="The jarvis-pkg operation")
     parser.add_argument('remaining', nargs=argparse.REMAINDER)
-    parser.parse_args(sys.argv)
+    args = parser.parse_args(sys.argv)
+
+    if args.op == JarvisPkgOp.INSTALL:
+        pass
+    if args.op == JarvisPkgOp.UPDATE:
+        pass
+    if args.op == JarvisPkgOp.UNINSTALL:
+        pass
+    if args.op == JarvisPkgOp.LOAD:
+        pass
+    if args.op == JarvisPkgOp.LIST:
+        pass
+    if args.op == JarvisPkgOp.FIND:
+        pass
+    if args.op == JarvisPkgOp.REPO:
+        pass

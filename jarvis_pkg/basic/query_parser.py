@@ -12,7 +12,7 @@ class QueryParser:
         self.query_str = query_str
         self.pkg_name=pkg_name
         self.pkgs = []
-        self.jpkg_manager = JpkgManager().GetInstance()
+        self.jpkg_manager = JpkgManager().get_instance()
 
     @staticmethod
     def _is_variant(tok):
@@ -72,14 +72,16 @@ class QueryParser:
         pkg_id, pkg_vrange = self._parse_pkg_id_version(pkg_dep)
         pkg_namespace,pkg_name = self._parse_pkg_id(pkg_dep, pkg_id)
         min,max = self._parse_pkg_version_range(pkg_dep, pkg_vrange)
-
-        pkg_class = self.jpkg_manager._PackageImport(pkg_name)
-        if pkg_class is None:
+        pkg_classes = self.jpkg_manager.find_imports(pkg_namespace, pkg_name)
+        if len(pkg_classes) == 0:
             raise Error(ErrorCode.UNKOWN_PACKAGE).format(pkg_name)
-        pkg = pkg_class()
-        pkg.set_namespace(pkg_namespace)
-        pkg.intersect_version_range(min,max)
-        return pkg
+        pkgs = []
+        for pkg_class in pkg_classes:
+            pkg = pkg_class()
+            pkg.set_namespace(pkg_namespace)
+            pkg.intersect_version_range(min,max)
+            pkgs.append(pkg)
+        return pkgs
 
     @staticmethod
     def _is_dep(tok):
@@ -90,17 +92,17 @@ class QueryParser:
         build_deps = []
         run_deps = []
         if not self._is_dep(toks[0]):
-            root_pkg = toks[0]
+            root_pkg_query = toks[0]
             toks = toks[1:]
         else:
-            root_pkg = self.pkg_name
+            root_pkg_query = self.pkg_name
         it = iter(toks)
         for dep_type,pkg_dep in zip(it,it):
             if dep_type == '%':
                 build_deps.append(pkg_dep)
             else:
                 run_deps.append(pkg_dep)
-        return root_pkg, build_deps, run_deps
+        return root_pkg_query, build_deps, run_deps
 
     @staticmethod
     def _parse_variant(root_pkg, variant):
@@ -130,16 +132,19 @@ class QueryParser:
         return key,val
 
     def _parse_pkg_query(self, pkg_query, variants):
-        root_pkg,build_deps,run_deps = self._split_pkg_deps(pkg_query)
-        root_pkg = self._parse_pkg_dep(root_pkg)
-        for pkg_dep in build_deps:
-            root_pkg.depends_on(self._parse_pkg_dep(pkg_dep), time='build')
-        for pkg_dep in run_deps:
-            root_pkg.depends_on(self._parse_pkg_dep(pkg_dep), time='run')
-        for variant in variants:
-            key,value = self._parse_variant(root_pkg, variant)
-            root_pkg.set_variant(key,value)
-        return root_pkg
+        root_pkg_query,build_deps,run_deps = self._split_pkg_deps(pkg_query)
+        root_pkgs = self._parse_pkg_dep(root_pkg_query)
+        build_deps = [self._parse_pkg_dep(pkg_dep) for pkg_dep in build_deps]
+        run_deps = [self._parse_pkg_dep(pkg_dep) for pkg_dep in run_deps]
+        variants = [self._parse_variant(pkg_query, v) for v in variants]
+        for root_pkg in root_pkgs:
+            for pkg_dep in build_deps:
+                root_pkg.depends_on(pkg_dep, time='build')
+            for pkg_dep in run_deps:
+                root_pkg.depends_on(pkg_dep, time='run')
+            for (key,value) in variants:
+                root_pkg.set_variant(key,value)
+        return root_pkgs
 
     def _split_packages(self, query_str):
         query_str = "".join(self._remove_whitespace(query_str))
@@ -157,13 +162,10 @@ class QueryParser:
     def parse(self):
         pkg_queries = self._split_packages(self.query_str)
         for (pkg_query,variants) in pkg_queries:
-            self.pkgs.append(self._parse_pkg_query(pkg_query, variants))
+            self.pkgs += self._parse_pkg_query(pkg_query, variants)
         return self
 
     def print(self):
         for pkg in self.pkgs:
             pkg.print()
             print()
-
-
-

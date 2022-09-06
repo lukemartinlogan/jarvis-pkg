@@ -1,28 +1,24 @@
-jpkg install c@2.3 ^ b@2.1
+depends_on(mpi)
+depends_on(daos)
 
-a:
-b:
-    depends_on('a@2.3', when='@2.3')
-    depends_on('a@2.4', when='@2.4')
-c:
-    depends_on('a@2.3')
-d:
-    depends_on('c')
-    depends_on('b')
 
-Step 1: Create a list of packages to install
-    - Unspecified version
-    - Potentially override variants
-    - Potentially override build-time dependencies
-Step 2: Determine all candidate packages to be installed and their order
-    - Initially passed package install list
-    - Create a semi-initialized environment with this package list
-        - Env is a dict mapping a package name to a Package
-        - Env.Load:
-            intersect versions
-            intersect variants
-            intersect dependencies
-    - Start at the root package
-    - Filter out dependencies depending on the current environment
-    - Check if there are currently any conflicts with the current environment
-    -
+depends_on(mpi)
+The environment may have a generic "mpi" package
+    Will have to identify a specific package name and version
+
+How to handle multiple installers for same package?
+    - Same namespace, installer included in the name
+        DaosSconsPackage
+        DaosAptPackage
+        DaosYumPackage
+        etc...
+        Removes multiple inheritence
+    - Multiple inheratiance
+        Daos(SconsPackage,AptPackage,YumPackage,etc.)
+        Maybe different default variants for different package managers
+        Variants simply may be unkown
+        Can change default_variants to be per-installer
+            I prefer this solution
+
+Introspect is a function that is called to determine if a package is installed
+externally.
