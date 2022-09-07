@@ -1,4 +1,4 @@
-from jarvis_pkg.package.package import Package
+from jarvis_pkg.package.package_query import PackageQuery
 
 
 class DepEnvEntry:
@@ -12,9 +12,6 @@ class DepEnvEntry:
         if conditions is not None:
             self.conditions += conditions
 
-    def get_name(self):
-        return self.pkg.get_class()
-
 
 class DepEnvRow:
     def __init__(self):
@@ -25,12 +22,9 @@ class DepEnvRow:
     def add_entry(self, pkg, order, is_build_dep, parent, conditions):
         self.row.append(DepEnvEntry(pkg, order, is_build_dep,
                                     parent, conditions))
-        self.name = pkg.get_class()
+        self.name = pkg.api_class
         if pkg.is_required:
             self.is_required = True
-
-    def get_name(self):
-        return self.name
 
     def find(self, pkg_query):
         matching = []
@@ -41,13 +35,12 @@ class DepEnvRow:
 
 
 class DepEnvClass:
-    def __init__(self):
+    def __init__(self, api_class):
         self.order = 0
-        self.pclass = None
+        self.api_class = api_class
         self.map = {} #(namespace,name) -> row
 
     def add_entry(self, pkg, order, is_build_dep, parent, conditions):
-        self.pclass = pkg.get_class()
         id = pkg.get_id()
         if id not in self.map:
             self.map[id] = DepEnvRow()
@@ -67,18 +60,19 @@ class DepEnvClass:
     def _contains_condition(self, condition):
         if condition is None:
             return True
-        if condition.get_class() not in self.nodes:
+        if condition.api_class not in self.nodes:
             return False
-        return condition in self.nodes[condition.get_class()]
+        return condition in self.nodes[condition.api_class]
+
 
 class DepEnv:
     def __init__(self):
         self.nodes = {}
 
-    def add_entry(self, pkg, order, is_build_dep, parent, conditions):
-        if pkg.get_class() not in self.nodes:
-            self.nodes[pkg.get_class()] = DepEnvClass()
-        self.nodes[pkg.get_class()].add_entry(pkg, order, is_build_dep, parent, conditions)
+    def add_entry(self, pkg, order=0, is_build_dep=False, parent=None, conditions=None):
+        if pkg.api_class not in self.nodes:
+            self.nodes[pkg.api_class] = DepEnvClass(pkg.api_class)
+        self.nodes[pkg.api_class].add_entry(pkg, order, is_build_dep, parent, conditions)
 
     def add_row(self, pkgs, order):
         for pkg in pkgs:
@@ -102,16 +96,16 @@ class DepEnv:
         matching = []
         if pkg_query is None:
             return matching
-        if pkg_query.get_class() not in self.nodes:
+        if pkg_query.api_class not in self.nodes:
             return matching
-        matching = self.nodes[pkg_query.get_class()].find(pkg_query)
+        matching = self.nodes[pkg_query.api_class].find(pkg_query)
         return matching
 
     def __getitem__(self, pkg_name):
         return self.nodes[pkg_name]
 
     def __contains__(self, key):
-        if isinstance(key, Package):
+        if isinstance(key, PackageQuery):
             return len(self.find(key)) > 0
         if isinstance(key, str):
             return key in self.nodes

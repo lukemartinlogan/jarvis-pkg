@@ -11,14 +11,14 @@ class DependencyGraph:
     def _get_install_environment(self, root_pkg, env, order=0, build_dep=False, parent=None, conditions=None, cycle_set=None):
         if cycle_set is None:
             cycle_set = set()
-        if root_pkg.get_class() not in cycle_set:
-            cycle_set.add(root_pkg.get_class())
+        if root_pkg.api_class not in cycle_set:
+            cycle_set.add(root_pkg.api_class)
         else:
-            raise Error(ErrorCode.CYCLIC_DEPENDENCY).format(root_pkg.get_class())
+            raise Error(ErrorCode.CYCLIC_DEPENDENCY).format(root_pkg.api_class)
         root_pkg.define_deps()
-        for dep_pkg,dep_conditions in root_pkg.get_build_deps():
+        for dep_pkg,dep_conditions in root_pkg.all_build_deps:
             self._get_install_environment(dep_pkg, env, order=order+1, build_dep=True*build_dep, parent=root_pkg, conditions=dep_conditions)
-        for dep_pkg,dep_conditions in root_pkg.get_run_deps():
+        for dep_pkg,dep_conditions in root_pkg.all_run_deps:
             self._get_install_environment(dep_pkg, env, order=order+1, parent=root_pkg, conditions=dep_conditions)
         env.add_entry(root_pkg, order, build_dep, parent, conditions)
 

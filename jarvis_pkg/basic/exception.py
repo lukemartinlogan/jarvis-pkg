@@ -36,6 +36,9 @@ class ErrorCode:
     VERSION_SET_NOT_STRING = {"id": 106, "msg": "When setting version range, string notation required"}
     CONFLICT = {"id": 107, "msg": "{}"}
 
+    # Repo manager
+    CANT_FIND_INSTALLED_PKG = {"id": 400, "msg": "Cannot find installed package {}.{}"}
+
     # Query Parser
     MALFORMED_VERSION_QUERY = {"id": 200, "msg": "Malformed version query in token: {}"}
     MALFORMED_PKG_NAME_QUERY = {"id": 201, "msg": "Malformed package name query in token: {}"}
@@ -47,3 +50,4 @@ class ErrorCode:
     INSTALLER_UNDEFINED = {"id": 301, "msg": "The installer {} in {}.{} was not defined"}
     REQUIRE_INTROSPECT = {"id": 302, "msg": "Introspect disabled for {}.{}, but not satisifiable version"}
     CLASS_NOT_FOUND = {"id": 303, "msg": "Class {} was not found in any namespace"}
+    DIFFERENT_PKGS = {"id": 304, "msg": "Cannot compare {}.{} with {}.{}"}

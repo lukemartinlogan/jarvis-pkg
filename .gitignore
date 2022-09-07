@@ -7,8 +7,9 @@ jarvis_conf.yaml
 jpkg_installers
 jpkg_repos
 hostfile.txt
-repos.yaml
 manifest.yaml
+repos.yaml
+install.yaml
 
 # C extensions
 *.so

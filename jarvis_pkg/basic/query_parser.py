@@ -13,6 +13,7 @@ class QueryParser:
         self.pkg_name=pkg_name
         self.pkgs = []
         self.jpkg_manager = JpkgManager().get_instance()
+        self.repo_manager = self.jpkg_manager.repo_manager
 
     @staticmethod
     def _is_variant(tok):
@@ -72,13 +73,13 @@ class QueryParser:
         pkg_id, pkg_vrange = self._parse_pkg_id_version(pkg_dep)
         pkg_namespace,pkg_name = self._parse_pkg_id(pkg_dep, pkg_id)
         min,max = self._parse_pkg_version_range(pkg_dep, pkg_vrange)
-        pkg_classes = self.jpkg_manager.find_imports(pkg_namespace, pkg_name)
+        pkg_classes = self.repo_manager.find_imports(pkg_namespace, pkg_name)
         if len(pkg_classes) == 0:
             raise Error(ErrorCode.UNKOWN_PACKAGE).format(pkg_name)
         pkgs = []
         for pkg_class in pkg_classes:
             pkg = pkg_class()
-            pkg.set_namespace(pkg_namespace)
+            pkg.namespace = pkg_namespace
             pkg.intersect_version_range(min,max)
             pkgs.append(pkg)
         return pkgs
@@ -109,13 +110,13 @@ class QueryParser:
         if '=' in variant:
             toks = variant.split('=')
             if len(toks) != 2:
-                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
+                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.name, variant)
             key = toks[0]
             val = toks[1]
         elif '+' in variant:
             toks = variant.split('+')
             if len(toks) != 2:
-                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
+                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.name, variant)
             key = toks[1]
             val = True
         elif '-' in variant or '~' in variant:
@@ -124,11 +125,11 @@ class QueryParser:
             else:
                 toks = variant.split('~')
             if len(toks) != 2:
-                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
+                raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.name, variant)
             key = toks[1]
             val = False
         else:
-            raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.get_name(), variant)
+            raise Error(ErrorCode.MALFORMED_VARIANT).format(root_pkg.name, variant)
         return key,val
 
     def _parse_pkg_query(self, pkg_query, variants):

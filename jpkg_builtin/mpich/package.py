@@ -7,7 +7,7 @@ class Mpich(AutotoolsPackage):
     #Package class
     def define_versions(self):
         super().define_versions()
-        self.set_class('mpi')
+        self.api_class = 'mpi'
         self.version('3.2', url='http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz')
         self.variant('pvfs2', default=False, msg="Install the OrangeFS-specific mpich")
         self.depends_on('orangefs')

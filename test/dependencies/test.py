@@ -136,7 +136,7 @@ def run_test():
     d = D()
     graph = DependencyGraph().build([d])
     for pkg in graph.install_schema:
-        if pkg.get_name() == 'A':
+        if pkg.name == 'A':
             if pkg.version_['version'] != Version('v1.5.0'):
                 print(f"A has the wrong version: {pkg.version_['version']}")
     graph.print()
