@@ -7,6 +7,8 @@ jpkg install pkg_name@version variant=a variant=b +variant -variant ^ dep_name v
 """
 
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
+from jarvis_pkg.basic.manifest_manager import ManifestManager
+
 import argparse
 from enum import Enum
 import sys
@@ -21,10 +23,14 @@ class JarvisPkgOp(Enum):
     FIND = "find"
     REPO = "repo"
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='jpkg')
-    parser.add_argument('op', metavar='operation', type=JarvisPkgOp, choices=list(JarvisPkgOp), help="The jarvis-pkg operation")
-    parser.add_argument('remaining', nargs=argparse.REMAINDER)
+    parser.add_argument('op', metavar='operation',
+                        type=JarvisPkgOp,
+                        choices=list(JarvisPkgOp),
+                        help="The jarvis-pkg operation")
+    parser.add_argument('remainder', nargs=argparse.REMAINDER)
     args = parser.parse_args()
 
     if args.op == JarvisPkgOp.INSTALL:
@@ -40,4 +46,6 @@ if __name__ == '__main__':
     if args.op == JarvisPkgOp.FIND:
         pass
     if args.op == JarvisPkgOp.REPO:
-        pass
+        manifest = ManifestManager.get_instance()
+        manifest.parse_args(args.remainder)
+        manifest.save()

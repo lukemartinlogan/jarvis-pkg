@@ -7,7 +7,7 @@ Jarvis State:
 """
 
 from jarvis_cd import *
-from jarvis_cd.serialize.yaml_file import YAMLFile
+from jarvis_cd.serialize.pickle import PickleFile
 from jarvis_cd.util.expand_paths import ExpandPaths
 from jarvis_pkg.basic.exception import Error,ErrorCode
 
@@ -30,15 +30,16 @@ class JpkgManager:
         self.sys_hash = hash(SystemInfoNode().Run())
 
     def _init_manifest_path(self):
-        self.manifest_path = os.path.join(self.jpkg_state_path, "all_pkgs.yaml")
+        self.manifest_path = os.path.join(self.jpkg_state_path, "manifest.pkl")
         if not os.path.exists(self.manifest_path):
-            default = {'REPOS': {}, 'NAMESPACE': []}
-            YAMLFile(self.manifest_path).Save(default)
+            default = {'REPOS': {}, 'SEARCH_ORDER': []}
+            PickleFile(self.manifest_path).Save(default)
             return
 
     def _init_installed_path(self):
-        self.installed_path = os.path.join(self.jpkg_state_path, "installed.yaml")
+        self.installed_path = os.path.join(self.jpkg_state_path,
+                                           "installed.pkl")
         if not os.path.exists(self.installed_path):
             default = []
-            YAMLFile(self.installed_path).Save(default)
+            PickleFile(self.installed_path).Save(default)
             return
