@@ -51,6 +51,12 @@ class PackageManager:
     def versions(self, pkg_list):
         return
 
+    def is_installed(self, pkg_query):
+        return False
+
+    def introspect(self, pkg_query):
+        pass
+
     """
     Argument Parser
     """
