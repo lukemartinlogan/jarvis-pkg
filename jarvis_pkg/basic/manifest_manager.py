@@ -9,7 +9,7 @@ from .jpkg_manager import JpkgManager
 
 import argparse
 import pathlib
-
+import pandas as pd
 
 class ManifestManagerOp(Enum):
     ADD = "add"
@@ -40,19 +40,16 @@ class ManifestManager:
     def __init__(self):
         self.jpkg = JpkgManager.get_instance()
         manifest = PickleFile(self.jpkg.manifest_path).Load()
-        self.repos = manifest['REPOS']
+        self.pkg_df = manifest['PKG_LIST']
+        self.metadata = manifest['METADATA']
         self.namespace_order = []
-        self.pkg_by_name = {}
-        self.pkg_by_class = {}
         for namespace in manifest['SEARCH_ORDER']:
-            record = self.repos[namespace]
             self._track_namespace(namespace)
-            for pkg_id in record['entries']:
-                self._track_pkg(pkg_id)
 
     def save(self):
         manifest = {
-            "REPOS": self.repos,
+            "PKG_LIST": self.pkg_df,
+            'METADATA': self.metadata,
             "SEARCH_ORDER": self.namespace_order
         }
         PickleFile(self.jpkg.manifest_path).Save(manifest)
@@ -60,28 +57,28 @@ class ManifestManager:
     def add_repo(self, repo_path, namespace=None):
         if namespace is None:
             namespace = os.path.basename(repo_path)
-        if namespace in self.repos:
+        if namespace in self.metadata:
             print(f"Error: {namespace} already exists")
             return
         record = {
             'path': str(pathlib.Path(repo_path).absolute()),
-            'entries': [],
             'enabled': True
         }
-        self.repos[namespace] = record
+        self.metadata[namespace] = record
         self._track_namespace(namespace)
         self.update_repo(namespace)
 
     def disable_repo(self, namespace):
-        self.repos[namespace]['enabled'] = False
+        self.metadata[namespace]['enabled'] = False
 
     def update_repo(self, namespace):
-        record = self.repos[namespace]
+        record = self.metadata[namespace]
         root_path = os.path.join(record['path'], namespace)
-        record['entries'] = []
         if not os.path.exists(root_path):
             print(f"Update Repo: {root_path} does not exist")
             return
+
+        pkg_list = []
         for pkg_filename in os.listdir(root_path):
             pkg_root_path = pathlib.Path(os.path.join(root_path, str(pkg_filename)))
             if pkg_root_path.is_dir():
@@ -89,43 +86,14 @@ class ManifestManager:
                 pkg_id = PackageId(namespace, None, pkg_name)
                 # pkg = self._construct_pkg(pkg_id)
                 # pkg_id.cls = pkg.pkg_id.cls
-
-                record['entries'].append(pkg_id)
-                self._track_pkg(pkg_id)
-
-    def _track_namespace(self, namespace):
-        root_path = self.repos[namespace]['path']
-        sys.path.insert(0, root_path)
-        self.namespace_order.insert(0, namespace)
-
-    def _untrack_namespace(self, namespace):
-        root_path = self.repos[namespace]['path']
-        sys.path.remove(root_path)
-        self.namespace_order.remove(namespace)
-        del self.repos[namespace]
-
-    def _track_pkg(self, pkg_id):
-        if pkg_id.name not in self.pkg_by_name:
-            self.pkg_by_name[pkg_id.name] = set()
-        self.pkg_by_name[pkg_id.name].add(pkg_id)
-
-        if pkg_id.cls not in self.pkg_by_class:
-            self.pkg_by_class[pkg_id.cls] = set()
-        self.pkg_by_class[pkg_id.cls].add(pkg_id)
-
-    def _untrack_pkg(self, pkg_id):
-        if pkg_id.name not in self.pkg_by_name:
-            return
-        del self.pkg_by_name[pkg_id.name][pkg_id]
-
-        if pkg_id.cls not in self.pkg_by_class:
-            return
-        del self.pkg_by_class[pkg_id.cls][pkg_id]
+                pkg_list.append(pkg_id.dict())
+        self.pkg_df = pd.concat([pd.DataFrame(pkg_list), self.pkg_df])
 
     def rm_repo(self, namespace):
-        for pkg_id in self.repos[namespace]['entries']:
-            self._untrack_pkg(pkg_id)
+        df = self.pkg_df
         self._untrack_namespace(namespace)
+        self.pkg_df.drop(df[df.namespace == namespace].index, inplace=True)
+        del self.metadata[namespace]
 
     def list_repos(self, namespaces):
         if len(namespaces) == 0:
@@ -135,11 +103,9 @@ class ManifestManager:
                 print("No repos currently in Jpkg")
             return
         for namespace in namespaces:
-            repo = self.repos[namespace]
             print(f"REPO: {namespace}")
-            repo_list = [pkg_id.name for pkg_id in repo['entries']]
-            print(" ".join(repo_list))
-            print()
+            df = self.pkg_df
+            print(df[df.namespace == namespace][['cls', 'name']].to_string())
 
     def promote_repos(self, namespaces):
         for namespace in namespaces:
@@ -147,25 +113,28 @@ class ManifestManager:
         self.namespace_order = namespaces + self.namespace_order
 
     def find_pkg_ids(self, pkg_name_or_class, namespace=None):
-        if pkg_name_or_class in self.pkg_by_class:
+        df = self.pkg_df
+        if pkg_name_or_class in df['cls']:
             pkg_class = pkg_name_or_class
             if namespace is None:
-                return self.pkg_by_class[pkg_class]
-            elif namespace in self.pkg_by_class[pkg_class]:
-                return set(self.pkg_by_class[pkg_class])
-        elif pkg_name_or_class in self.pkg_by_name:
+                return set(df[df.cls == pkg_class])
+            elif namespace in self.metadata:
+                return set(df[(df.namespace == namespace) &
+                              (df.cls == pkg_class)])
+        elif pkg_name_or_class in self.pkg_df['name']:
             pkg_name = pkg_name_or_class
             if namespace is None:
-                return self.pkg_by_name[pkg_name]
-            elif namespace in self.pkg_by_name[pkg_name]:
-                return set(self.pkg_by_name[pkg_name])
+                return set(df[df.name == pkg_name])
+            elif namespace in self.metadata:
+                return set(df[(df.namespace == namespace) &
+                              (df.name == pkg_name)])
         return set()
 
     def find_load_pkgs(self, pkg_name_or_class, namespace=None):
         pkg_id_set = self.find_load_pkgs(pkg_name_or_class, namespace)
         pkg_list = []
         for pkg_id in pkg_id_set:
-            if self.repos[pkg_id.namespace]['enabled']:
+            if self.metadata[pkg_id.namespace]['enabled']:
                 pkg_list.append(self._construct_pkg(pkg_id))
         return pkg_list
 
@@ -175,6 +144,16 @@ class ManifestManager:
         module = __import__(f"{pkg_id.namespace}.{pkg_id.name}.package",
                                fromlist=[class_name])
         return getattr(module, class_name)()
+
+    def _track_namespace(self, namespace):
+        root_path = self.metadata[namespace]['path']
+        sys.path.insert(0, root_path)
+        self.namespace_order.insert(0, namespace)
+
+    def _untrack_namespace(self, namespace):
+        root_path = self.metadata[namespace]['path']
+        sys.path.remove(root_path)
+        self.namespace_order.remove(namespace)
 
     """
     Argument parsers

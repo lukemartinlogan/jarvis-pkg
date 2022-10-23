@@ -18,3 +18,10 @@ class PackageId:
         if other.name != self.name:
             return False
         return True
+
+    def dict(self):
+        return {
+            "namespace": self.namespace,
+            "cls": self.cls,
+            "name": self.name
+        }

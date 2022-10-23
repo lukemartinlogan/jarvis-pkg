@@ -10,6 +10,7 @@ from jarvis_cd import *
 from jarvis_cd.serialize.pickle import PickleFile
 from jarvis_cd.util.expand_paths import ExpandPaths
 from jarvis_pkg.basic.exception import Error,ErrorCode
+import pandas as pd
 
 class JpkgManager:
     instance_ = None
@@ -32,14 +33,16 @@ class JpkgManager:
     def _init_manifest_path(self):
         self.manifest_path = os.path.join(self.jpkg_state_path, "manifest.pkl")
         if not os.path.exists(self.manifest_path):
-            default = {'REPOS': {}, 'SEARCH_ORDER': []}
+            columns = ["namespace", "cls", "name"]
+            default = {'PKG_LIST': pd.DataFrame(columns=columns),
+                       'METADATA': {},
+                       'SEARCH_ORDER': []}
             PickleFile(self.manifest_path).Save(default)
-            return
 
     def _init_installed_path(self):
         self.installed_path = os.path.join(self.jpkg_state_path,
                                            "installed.pkl")
         if not os.path.exists(self.installed_path):
-            default = []
+            columns = ["namespace", "cls", "name", "version"]
+            default = pd.DataFrame(columns=columns)
             PickleFile(self.installed_path).Save(default)
-            return
