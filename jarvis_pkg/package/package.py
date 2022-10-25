@@ -4,6 +4,7 @@ from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.basic.version import Version
 from jarvis_pkg.basic.package_query import PackageQuery
 from jarvis_pkg.basic.query_parser import QueryParser
+from abc import ABC, abstractmethod
 import re
 
 
@@ -56,7 +57,7 @@ def introspect(install=None, needs_root=False):
     return wrap
 
 
-class Package:
+class Package(PackageQuery):
     def default_installer(self):
         if self.__class__.__name__ == 'Package':
             return None
@@ -72,13 +73,53 @@ class Package:
         self.jpkg = JpkgManager.get_instance()
         self._load_superclass_decorators()
         self.versions = []
-        self.variants = []
-        self.dependencies = []
+        self.version_set = set()
+        self.variants = {}
+        self.dependencies = {}
         self.patches = []
         self.conflicts = []
+        self.variant("stable", bool, default=True,
+                     msg = "Whether or not to prioritize stable versions")
+        self.variant("root", bool, default=False,
+                     msg = "Whether or not to consider installers which require root")
 
-    def version(self, vstr, pkg_list=None, url=None, git=None, gpg=None):
+        self.define_versions()
+        self.define_variants()
+        self.define_dependencies()
+
+        self._version = None
+
+    @abstractmethod
+    def define_versions(self):
         pass
+
+    @abstractmethod
+    def define_variants(self):
+        pass
+
+    @abstractmethod
+    def define_dependencies(self):
+        pass
+
+    @abstractmethod
+    def define_conflicts(self):
+        pass
+
+    def version(self, version, method='source', url=None, git=None, gpg=None,
+                stable=True, needs_root=False):
+        if isinstance(version, str):
+            version = Version(version)
+        vinfo = {
+            'version': version,
+            'method': method,
+            'url': url,
+            'git': git,
+            'gpg': gpg,
+            'stable': stable,
+            'needs_root': needs_root
+        }
+        self.versions.append(vinfo)
+        self.version_set.add(version)
 
     def depends_on(self, pkg_query):
         if isinstance(pkg_query, str):
@@ -87,16 +128,38 @@ class Package:
             pkg = pkg_query
         else:
             raise Error(ErrorCode.INVALID_PARAMETER).format(type(pkg_query))
-        self.dependencies.append(pkg)
+        self.dependencies[pkg.pkg_id.cls] = pkg
 
-    def variant(self, variant_name, default=None):
-        pass
+    def variant(self, key, dtype, default=None, multi=False, msg=None):
+        variant_info = {
+            'datatype': dtype,
+            'multi': False,
+            'value': default
+        }
+        self.variants[key] = variant_info
 
     def patch(self):
+        # TODO(llogan)
         pass
 
     def conflict(self):
+        # TODO(llogan)
         pass
+
+    def solidify(self, pkg_query):
+        self.update_query(pkg_query)
+        versions = []
+        for vinfo in self.versions:
+            if vinfo['version'] not in self._versions:
+                continue
+            if not self._variants['root'] and vinfo['needs_root']:
+                continue
+            if self._variants['stable'] and not vinfo['stable']:
+                continue
+            versions.append(vinfo)
+        self._version = max(versions, key=lambda x: x['version'])
+        self._variants.update(self.variants)
+        self._variants.update(pkg_query._variants)
 
     def _load_superclass_decorators(self):
         self.phases = {} # pkg_name -> (needs_root, [phase_functions])

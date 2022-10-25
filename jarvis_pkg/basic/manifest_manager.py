@@ -112,35 +112,54 @@ class ManifestManager:
             self.namespace_order.remove(namespace)
         self.namespace_order = namespaces + self.namespace_order
 
-    def find_pkg_ids(self, pkg_name_or_class, namespace=None):
+    def _find_pkg_ids(self, pkg_id):
         df = self.pkg_df
-        if pkg_name_or_class in df['cls']:
-            pkg_class = pkg_name_or_class
+        namespace = pkg_id.namespace
+        pkg_class = pkg_id.cls
+        pkg_name = pkg_id.name
+        if pkg_class is not None and pkg_name is None:
             if namespace is None:
-                return set(df[df.cls == pkg_class])
+                return df[df.cls == pkg_class]
             elif namespace in self.metadata:
-                return set(df[(df.namespace == namespace) &
-                              (df.cls == pkg_class)])
-        elif pkg_name_or_class in self.pkg_df['name']:
-            pkg_name = pkg_name_or_class
+                return df[(df.namespace == namespace) &
+                          (df.cls == pkg_class)]
+        elif pkg_name is not None:
             if namespace is None:
-                return set(df[df.name == pkg_name])
+                return df[df.name == pkg_name]
             elif namespace in self.metadata:
-                return set(df[(df.namespace == namespace) &
-                              (df.name == pkg_name)])
-        return set()
+                return df[(df.namespace == namespace) &
+                          (df.name == pkg_name)]
+        return pd.DataFrame(columns=['namespace', 'cls', 'name'])
 
-    def find_load_pkgs(self, pkg_name_or_class, namespace=None):
-        pkg_id_set = self.find_load_pkgs(pkg_name_or_class, namespace)
+    def find_pkg_ids(self, pkg_id):
+        pkg_df = self._find_pkg_ids(pkg_id)
+        pkg_namespace = pkg_df.namespace.tolist()
+        pkg_cls = pkg_df.cls.tolist()
+        pkg_names = pkg_df.name.tolist()
+        pkg_ids = [PackageId(a, b, c) for a, b, c in zip(pkg_namespace,
+                                                pkg_cls, pkg_names)]
+        return pkg_ids
+
+    def find_load_pkgs(self, pkg_id):
+        pkg_id_set = self.find_pkg_ids(pkg_id)
         pkg_list = []
         for pkg_id in pkg_id_set:
             if self.metadata[pkg_id.namespace]['enabled']:
                 pkg_list.append(self._construct_pkg(pkg_id))
         return pkg_list
 
+    def select(self, pkg_query):
+        pkgs = self.find_load_pkgs(pkg_query.pkg_id)
+        if len(pkgs) == 0:
+            return None
+        pkg = pkgs[0]
+        pkg.solidify(pkg_query)
+        return pkg
+
     @staticmethod
     def _construct_pkg(pkg_id):
-        class_name = ToCamelCase(pkg_id.name)
+        class_name = ToCamelCase(f"{pkg_id.name}")
+        class_name = f"{class_name}Package"
         module = __import__(f"{pkg_id.namespace}.{pkg_id.name}.package",
                                fromlist=[class_name])
         return getattr(module, class_name)()

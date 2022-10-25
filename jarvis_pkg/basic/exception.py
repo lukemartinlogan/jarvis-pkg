@@ -1,10 +1,10 @@
 class Error(BaseException):
-    def __init__(self, error_code, child_error = None):
+    def __init__(self, error_msg, child_error = None):
         if child_error is None:
-            self._error_message = error_code.value
+            self._error_message = error_msg
         else:
             self._error_message = str(child_error) + \
-                                  "\n{}".format(error_code.value)
+                                  "\n{}".format(error_msg)
 
     def format(self, *error_code_args):
         """
@@ -34,3 +34,8 @@ class ErrorCode:
     UNKOWN_PACKAGE = "Cannot find package {}"
     CYCLIC_DEPENDENCY = "Cyclic dependency: {}"
     UNSATISFIABLE = "Cannot satisfy the dependency {}"
+    CANT_FIND_PACKAGE = "Cannot find the package: {}"
+    PKG_IDS_DO_NOT_MATCH = "Package IDs cannot be intersected: {}"
+    VERSIONS_CANT_BE_MERGED = "Version sets are incompatible"
+    VARIANTS_INCOMPATIBLE = "Conflicting variants are set"
+    INTERSECT_COMPLEX_QUERIES = "Cannot intersect complex queries in simple_intersect"

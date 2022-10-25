@@ -2,7 +2,10 @@
 class PackageId:
     def __init__(self, namespace, pkg_class, pkg_name):
         self.namespace = namespace
-        self.cls = pkg_class
+        if pkg_class is not None:
+            self.cls = pkg_class
+        else:
+            self.cls = pkg_name
         self.name = pkg_name
 
     def __hash__(self):
@@ -25,3 +28,12 @@ class PackageId:
             "cls": self.cls,
             "name": self.name
         }
+
+    def to_string(self):
+        return f"{self.namespace}.{self.cls}.{self.name}"
+
+    def __repr__(self):
+        return self.to_string()
+
+    def __str__(self):
+        return self.to_string()
