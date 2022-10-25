@@ -68,8 +68,9 @@ class Package(PackageQuery):
             install = None
         return install
 
-    def __init__(self):
+    def __init__(self, pkg_id):
         super().__init__()
+        self.pkg_id = pkg_id
         self.jpkg = JpkgManager.get_instance()
         self._load_superclass_decorators()
         self.versions = []
@@ -86,7 +87,8 @@ class Package(PackageQuery):
         self.define_versions()
         self.define_variants()
         self.define_dependencies()
-
+        for v in self.versions:
+            self._versions.add(v['version'])
         self._version = None
 
     @abstractmethod
@@ -148,6 +150,8 @@ class Package(PackageQuery):
 
     def solidify(self, pkg_query):
         self.update_query(pkg_query)
+        self._variants.update(self.variants)
+        self._variants.update(pkg_query._variants)
         versions = []
         for vinfo in self.versions:
             if vinfo['version'] not in self._versions:
@@ -158,8 +162,6 @@ class Package(PackageQuery):
                 continue
             versions.append(vinfo)
         self._version = max(versions, key=lambda x: x['version'])
-        self._variants.update(self.variants)
-        self._variants.update(pkg_query._variants)
 
     def _load_superclass_decorators(self):
         self.phases = {} # pkg_name -> (needs_root, [phase_functions])
@@ -170,3 +172,12 @@ class Package(PackageQuery):
                 if callable(value):
                     if value.__name__ == '_jpkg_decor_impl':
                         value(self, in_init=True)
+
+    def to_string(self):
+        return f"{self.pkg_id} : {self._version['version']}"
+
+    def __repr__(self):
+        return self.to_string()
+
+    def __str__(self):
+        return self.to_string()

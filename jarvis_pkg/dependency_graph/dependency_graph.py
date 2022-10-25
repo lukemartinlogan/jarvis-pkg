@@ -69,18 +69,19 @@ class DependencyGraph:
         new_row = []
         for pkg_query in row:
             if pkg_query.parent is not None:
-                cls = pkg_query.pkg_id.cls
+                cls = pkg_query.parent.pkg_id.cls
                 if candidates_by_class[cls].intersect(pkg_query).is_null():
                     continue
             new_row.append(pkg_query)
         return new_row
 
     @staticmethod
-    def simple_query_matches_row(simple_query, row):
+    def pkg_matches_row(pkg, row):
         for pkg_query in row:
-            simple_query.intersect(pkg_query)
-            if simple_query.is_null():
+            isect = pkg.intersect(pkg_query)
+            if isect.is_null():
                 return False
+            pkg.update_query(isect)
         return True
 
     def select_installed(self, pkg_query, pkg_by_class):
@@ -94,7 +95,7 @@ class DependencyGraph:
             pkg_class = pkg.pkg_id.cls
             pkg_query_row = self.pkg_env.pkg_queries_by_class[pkg_class]
             row = pkg_query_row[1]['row']
-            if self.simple_query_matches_row(pkg, row):
+            if self.pkg_matches_row(pkg, row):
                 pkg_by_class[pkg_class] = pkg
                 return True
         return False
@@ -118,7 +119,6 @@ class DependencyGraph:
         candidates = []  # [pkg_query]
         for pkg_query_row in ordered_queries:
             cls = pkg_query_row[0]
-            order = pkg_query_row[1]['order']
             row = pkg_query_row[1]['row']
             unique_names = pkg_query_row[1]['unique_names']
 
@@ -133,10 +133,11 @@ class DependencyGraph:
             # Determine the set of candidate PKGs for this row
             row_candidates = []
             for name in unique_names:
-                simple_query = PackageQuery()
-                simple_query.pkg_id = PackageId(None, cls, name)
-                if self.simple_query_matches_row(simple_query, row):
-                    row_candidates.append(simple_query)
+                pkgs = self.manifest_manager.find_load_pkgs(
+                    PackageId(None, cls, name))
+                for pkg in pkgs:
+                    if self.pkg_matches_row(pkg, row):
+                        row_candidates.append(pkg)
             if len(row_candidates) == 0:
                 raise Error(ErrorCode.UNSATISFIABLE).format(cls)
 

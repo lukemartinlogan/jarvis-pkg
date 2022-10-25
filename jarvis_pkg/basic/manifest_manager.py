@@ -162,7 +162,7 @@ class ManifestManager:
         class_name = f"{class_name}Package"
         module = __import__(f"{pkg_id.namespace}.{pkg_id.name}.package",
                                fromlist=[class_name])
-        return getattr(module, class_name)()
+        return getattr(module, class_name)(pkg_id)
 
     def _track_namespace(self, namespace):
         root_path = self.metadata[namespace]['path']

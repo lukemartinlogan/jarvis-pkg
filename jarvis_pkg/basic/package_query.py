@@ -36,9 +36,6 @@ class PackageQuery:
     def set_variant(self, key, value):
         self._variants[key] = value
 
-    def set_versions(self, all_versions):
-        self._versions = all_versions
-
     def intersect_version_range(self, min, max):
         self._versions = set(v for v in self._versions if min <= v <= max)
 
@@ -62,7 +59,11 @@ class PackageQuery:
         new_query.pkg_id = new_pkg_id
 
     def _intersect_versions(self, new_query, other):
-        new_query._versions = self._versions.intersection(other._versions)
+        if len(other._versions) == 0 or len(new_query._versions) == 0:
+            new_query._versions.update(self._versions)
+            new_query._versions.update(other._versions)
+        else:
+            new_query._versions = self._versions.intersection(other._versions)
         if len(new_query._versions) == 0:
             raise Error(ErrorCode.VERSIONS_CANT_BE_MERGED).format()
 
@@ -86,6 +87,7 @@ class PackageQuery:
             self._intersect_pkg_id(new_query, other)
             self._intersect_versions(new_query, other)
             self._intersect_variants(new_query, other)
+            return new_query
         except Error as e:
             return self.null()
 
@@ -125,7 +127,7 @@ class PackageQuery:
         return null_query
 
     def to_string(self):
-        text = f"{self.pkg_id}\n{self._variants}\n{self._versions}"
+        return f"{self.pkg_id}\n{self._variants}\n{self._versions}"
 
     def __repr__(self):
         return self.to_string()
