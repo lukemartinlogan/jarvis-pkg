@@ -37,8 +37,10 @@ if __name__ == '__main__':
     if args.op == JarvisPkgOp.INSTALL:
         installer = PackageInstaller.get_instance()
         installer.install()
+        installer.save()
     if args.op == JarvisPkgOp.UPDATE:
-        pass
+        installer = PackageInstaller.get_instance()
+        installer.update()
     if args.op == JarvisPkgOp.UNINSTALL:
         pass
     if args.op == JarvisPkgOp.LOAD:

@@ -3,6 +3,7 @@ from .package_query import PackageQuery
 from .package_id import PackageId
 from jarvis_cd import *
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
+from jarvis_pkg.basic.package_manager import PackageManager
 import wget
 
 
@@ -16,11 +17,15 @@ class PackageInstaller:
         return PackageInstaller.instance_
 
     def __init__(self):
-        self.jpkg_manager = JpkgManager.get_instance()
+        self.jpkg = JpkgManager.get_instance()
+        self.package_manager = PackageManager.get_instance()
+
+    def save(self):
+        self.package_manager.save()
 
     def download(self, candidate):
-        candidate.source_dir = os.path.join(self.jpkg_manager.pkg_dirs, candidate.get_unique_name())
-        candidate.tmp_source_dir = os.path.join(self.jpkg_manager.tmp_pkg_dirs, candidate.get_unique_name())
+        candidate.source_dir = os.path.join(self.jpkg.pkg_dirs, candidate.get_unique_name())
+        candidate.tmp_source_dir = os.path.join(self.jpkg.tmp_pkg_dirs, candidate.get_unique_name())
         if candidate._version['git'] is not None:
             GitNode(candidate._version['git'], candidate.tmp_source_dir, GitOps.CLONE,
                     branch=candidate._version['branch'],
@@ -39,3 +44,4 @@ class PackageInstaller:
             self.download(candidate)
             for phase in candidate.get_phases():
                 phase(candidate)
+            self.package_manager.register(candidate)

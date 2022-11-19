@@ -44,7 +44,7 @@ class JpkgManager:
         self.installed_path = os.path.join(self.jpkg_state_path,
                                            "installed.pkl")
         if not os.path.exists(self.installed_path):
-            columns = ["namespace", "cls", "name", "version"]
+            columns = ["namespace", "cls", "name", "version", "pkg"]
             default = pd.DataFrame(columns=columns)
             PickleFile(self.installed_path).Save(default)
 

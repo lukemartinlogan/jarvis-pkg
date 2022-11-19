@@ -5,15 +5,13 @@ from jarvis_cd.util.expand_paths import ExpandPaths
 from jarvis_pkg.basic.exception import Error,ErrorCode
 from jarvis_pkg.basic.package_id import PackageId
 from .jpkg_manager import JpkgManager
+import pandas as pd
 
 import argparse
 import pathlib
 
 
 class PackageManagerOp(Enum):
-    INSTALL = "install"
-    UPDATE = "update"
-    REMOVE = "remove"
     LIST = "list"
     INFO = "info"
     VERSIONS = "versions"
@@ -30,16 +28,23 @@ class PackageManager:
 
     def __init__(self):
         self.jpkg = JpkgManager.get_instance()
-        self.installed = PickleFile(self.jpkg.installed_path).Load()
+        self.df = PickleFile(self.jpkg.installed_path).Load()
         pass
 
-    def install(self, pkg_list):
-        return
+    def save(self):
+        PickleFile(self.jpkg.installed_path).Save(self.df)
 
-    def update(self, pkg_list):
-        return
+    def register(self, pkg):
+        record = pd.Series({
+            'namespace': pkg.pkg_id.namespace,
+            'cls': pkg.pkg_id.cls,
+            'name': pkg.pkg_id.name,
+            'version': pkg._version,
+            'pkg': pkg,
+        })
+        self.df = pd.concat([self.df, record])
 
-    def remove(self, pkg_list):
+    def unregister(self, pkg):
         return
 
     def list(self, pkg_list):
@@ -71,16 +76,7 @@ class PackageManager:
         parser.add_argument('remainder', nargs=argparse.REMAINDER)
         args = parser.parse_args(args)
 
-        if args.op == PackageManagerOp.INSTALL:
-            args = self.parse_repo_path_args(args.op, args.remainder)
-            self.install(args)
-        elif args.op == PackageManagerOp.UPDATE:
-            args = self.parse_namespace_args(args.op, args.remainder)
-            self.update(args)
-        elif args.op == PackageManagerOp.REMOVE:
-            args = self.parse_namespace_args(args.op, args.remainder)
-            self.remove(args)
-        elif args.op == PackageManagerOp.LIST:
+        if args.op == PackageManagerOp.LIST:
             args = self.parse_namespace_list_args(args.op, args.remainder)
             self.list(args)
         elif args.op == PackageManagerOp.INFO:

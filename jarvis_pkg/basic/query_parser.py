@@ -12,8 +12,8 @@ class QueryParser:
         self.query_str = query_str
         self.pkg_name=pkg_name
         self.pkgs = []
-        self.jpkg_manager = JpkgManager().get_instance()
-        self.repo_manager = self.jpkg_manager.repo_manager
+        self.jpkg = JpkgManager().get_instance()
+        self.repo_manager = self.jpkg.repo_manager
 
     @staticmethod
     def _is_variant(tok):

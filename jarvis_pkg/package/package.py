@@ -205,11 +205,10 @@ class Package(PackageQuery):
         if self.unique_name is not None:
             return self.unique_name
         sysinfo = hash(SystemInfoNode().Run())
-        cur_time = hash(time.time())
         variants = hash(str(self._variants))
         deps = hash(str(self._dependencies))
         method = hash(self._install_method)
-        h = abs(hash(sysinfo ^ cur_time ^ variants ^ deps ^ method))
+        h = abs(hash(sysinfo ^ variants ^ deps ^ method))
         self.unique_name = f"{self.pkg_id.name}-{h}"
         return self.unique_name
 
