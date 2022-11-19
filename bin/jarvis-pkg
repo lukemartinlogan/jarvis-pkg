@@ -8,6 +8,7 @@ jpkg install pkg_name@version variant=a variant=b +variant -variant ^ dep_name v
 
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.basic.manifest_manager import ManifestManager
+from jarvis_pkg.basic.package_installer import PackageInstaller
 
 import argparse
 from enum import Enum
@@ -34,7 +35,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.op == JarvisPkgOp.INSTALL:
-        pass
+        installer = PackageInstaller.get_instance()
+        installer.install()
     if args.op == JarvisPkgOp.UPDATE:
         pass
     if args.op == JarvisPkgOp.UNINSTALL:

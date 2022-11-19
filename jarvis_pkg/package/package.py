@@ -90,6 +90,11 @@ class Package(PackageQuery):
         for v in self.versions:
             self._versions.add(v['version'])
         self._version = None
+        self._install_method = None
+        self.is_installed = False
+        self.source_dir = None
+        self.tmp_source_dir = None
+        self.unique_name = None
 
     @abstractmethod
     def define_versions(self):
@@ -107,8 +112,8 @@ class Package(PackageQuery):
     def define_conflicts(self):
         pass
 
-    def version(self, version, method='source', url=None, git=None, gpg=None,
-                stable=True, needs_root=False):
+    def version(self, version, method='source', url=None, git=None, branch=None, commit=None,
+                gpg=None, stable=True, needs_root=False):
         if isinstance(version, str):
             version = Version(version)
         vinfo = {
@@ -116,6 +121,8 @@ class Package(PackageQuery):
             'method': method,
             'url': url,
             'git': git,
+            'branch': branch,
+            'commit': commit,
             'gpg': gpg,
             'stable': stable,
             'needs_root': needs_root
@@ -162,6 +169,8 @@ class Package(PackageQuery):
                 continue
             versions.append(vinfo)
         self._version = max(versions, key=lambda x: x['version'])
+        if len(self.phases):
+            self._solidify_install_method(list(self.phases.keys())[0])
 
     def _load_superclass_decorators(self):
         self.phases = {} # pkg_name -> (needs_root, [phase_functions])
@@ -173,6 +182,16 @@ class Package(PackageQuery):
                     if value.__name__ == '_jpkg_decor_impl':
                         value(self, in_init=True)
 
+    def _solidify_install_method(self, installer_name):
+        self._install_method = installer_name
+        if installer_name not in self.phase_confs:
+            return
+        for phase_conf in self.phase_confs[installer_name][1]:
+            self.__dict__[phase_conf.__name__] = phase_conf
+
+    def get_phases(self):
+        return self.phases[self._install_method][1]
+
     def to_string(self):
         return f"{self.pkg_id} : {self._version['version']}"
 
@@ -181,3 +200,16 @@ class Package(PackageQuery):
 
     def __str__(self):
         return self.to_string()
+
+    def get_unique_name(self):
+        if self.unique_name is not None:
+            return self.unique_name
+        sysinfo = hash(SystemInfoNode().Run())
+        cur_time = hash(time.time())
+        variants = hash(str(self._variants))
+        deps = hash(str(self._dependencies))
+        method = hash(self._install_method)
+        h = abs(hash(sysinfo ^ cur_time ^ variants ^ deps ^ method))
+        self.unique_name = f"{self.pkg_id.name}-{h}"
+        return self.unique_name
+

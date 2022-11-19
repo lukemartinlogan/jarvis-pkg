@@ -28,6 +28,7 @@ class JpkgManager:
             os.mkdir(self.jpkg_state_path)
         self._init_manifest_path()
         self._init_installed_path()
+        self._init_pkg_dirs()
         self.sys_hash = hash(SystemInfoNode().Run())
 
     def _init_manifest_path(self):
@@ -46,3 +47,7 @@ class JpkgManager:
             columns = ["namespace", "cls", "name", "version"]
             default = pd.DataFrame(columns=columns)
             PickleFile(self.installed_path).Save(default)
+
+    def _init_pkg_dirs(self):
+        self.pkg_dirs = os.path.join(self.jpkg_state_path, "pkgs")
+        self.tmp_pkg_dirs = os.path.join("/tmp", "jarvis_pkgs")
