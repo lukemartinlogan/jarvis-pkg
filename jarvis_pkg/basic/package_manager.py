@@ -35,17 +35,28 @@ class PackageManager:
         PickleFile(self.jpkg.installed_path).Save(self.df)
 
     def register(self, pkg):
-        record = pd.Series({
+        pkg.is_installed = True
+        record = pd.DataFrame.from_records([{
             'namespace': pkg.pkg_id.namespace,
             'cls': pkg.pkg_id.cls,
             'name': pkg.pkg_id.name,
-            'version': pkg._version,
-            'pkg': pkg,
-        })
+            'version': pkg.version_,
+            'pkg': pkg.to_query(),
+        }], index=None)
         self.df = pd.concat([self.df, record])
 
     def unregister(self, pkg):
         return
+
+    def query(self, pkg_query):
+        df = self.df
+        if pkg_query.pkg_id.namespace is not None:
+            df = df[df.namespace == pkg_query.pkg_id.namespace]
+        if pkg_query.pkg_id.cls is not None:
+            df = df[df.cls == pkg_query.pkg_id.cls]
+        if pkg_query.pkg_id.name is not None:
+            df = df[df.name == pkg_query.pkg_id.name]
+        return list(df['pkg'])
 
     def list(self, pkg_list):
         return
@@ -55,9 +66,6 @@ class PackageManager:
 
     def versions(self, pkg_list):
         return
-
-    def is_installed(self, pkg_query):
-        return False
 
     def introspect(self, pkg_query):
         pass

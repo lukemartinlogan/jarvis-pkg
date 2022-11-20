@@ -5,39 +5,42 @@ from jarvis_pkg.basic.exception import Error, ErrorCode
 class PackageQuery:
     def __init__(self):
         self.pkg_id = PackageId(None, None, None)
-        self._versions = set()
-        self._variants = {}
-        self._dependencies = {}
-        self._parent = None
-        self._null = False
-        self._or = []
+        self.versions_ = set()
+        self.variants_ = {}
+        self.dependencies_ = {}
+        self.parent_ = None
+        self.null_ = False
+        self.or_ = []
 
     def update_query(self, other):
         isect = self.intersect(other)
-        self.pkg_id = isect.pkg_id
-        self._versions = isect._versions
-        self._variants = isect._variants
-        self._dependencies = isect._dependencies
-        self._parent = isect._parent
-        self._null = isect._null
-        self._or = isect._or
+        self.copy_query(isect)
+
+    def copy_query(self, other):
+        self.pkg_id = other.pkg_id
+        self.versions_ = other.versions_
+        self.variants_ = other.variants_
+        self.dependencies_ = other.dependencies_
+        self.parent_ = other.parent_
+        self.null_ = other.null_
+        self.or_ = other.or_
 
     def get_class(self):
         if self.is_complex():
-            return self._or[0].pkg_id.cls
+            return self.or_[0].pkg_id.cls
         else:
             return self.pkg_id.cls
 
     def get_names(self):
         if not self.is_complex():
             return [self.pkg_id.name]
-        return [pkg_query.pkg_id.name for pkg_query in self._or]
+        return [pkg_query.pkg_id.name for pkg_query in self.or_]
 
     def set_variant(self, key, value):
-        self._variants[key] = value
+        self.variants_[key] = value
 
     def intersect_version_range(self, min, max):
-        self._versions = set(v for v in self._versions if min <= v <= max)
+        self.versions_ = set(v for v in self.versions_ if min <= v <= max)
 
     @staticmethod
     def set_id_part(my_name, other_name):
@@ -59,23 +62,23 @@ class PackageQuery:
         new_query.pkg_id = new_pkg_id
 
     def _intersect_versions(self, new_query, other):
-        if len(other._versions) == 0 or len(new_query._versions) == 0:
-            new_query._versions.update(self._versions)
-            new_query._versions.update(other._versions)
+        if len(other.versions_) == 0 or len(new_query.versions_) == 0:
+            new_query.versions_.update(self.versions_)
+            new_query.versions_.update(other.versions_)
         else:
-            new_query._versions = self._versions.intersection(other._versions)
-        if len(new_query._versions) == 0:
+            new_query.versions_ = self.versions_.intersection(other.versions_)
+        if len(new_query.versions_) == 0:
             raise Error(ErrorCode.VERSIONS_CANT_BE_MERGED).format()
 
     def _intersect_variants(self, new_query, other):
-        for key, value in other._variants.items():
-            my_value = self._variants[key]
+        for key, value in other.variants_.items():
+            my_value = self.variants_[key]
             if type(value) != type(my_value):
                 return self.null()
             if isinstance(value, set):
-                new_query._variants[key] = value.intersection(value, my_value)
+                new_query.variants_[key] = value.intersection(value, my_value)
             elif value == my_value:
-                new_query._variants[key] = my_value
+                new_query.variants_[key] = my_value
             else:
                 raise Error(ErrorCode.VARIANTS_INCOMPATIBLE).format()
 
@@ -94,40 +97,40 @@ class PackageQuery:
     def intersect(self, other):
         new_query = PackageQuery()
         if other.is_complex() and self.is_complex():
-            for other_pkg_query in other._or:
-                for my_pkg_query in self._or:
+            for other_pkg_query in other.or_:
+                for my_pkg_query in self.or_:
                     isect = my_pkg_query.simple_intersect(other_pkg_query)
                     if not isect.is_null():
-                        new_query._or.append(isect)
+                        new_query.or_.append(isect)
         elif not other.is_complex() and self.is_complex():
-            for my_pkg_query in self._or:
+            for my_pkg_query in self.or_:
                 isect = my_pkg_query.simple_intersect(other)
                 if not isect.is_null():
-                    new_query._or.append(isect)
+                    new_query.or_.append(isect)
         elif other.is_complex() and not self.is_complex():
-            for my_pkg_query in other._or:
+            for my_pkg_query in other.or_:
                 isect = my_pkg_query.simple_intersect(other)
                 if not isect.is_null():
-                    new_query._or.append(isect)
+                    new_query.or_.append(isect)
         else:
             return self.simple_intersect(other)
 
     def is_null(self):
-        return self._null
+        return self.null_
 
     def is_simple(self):
-        return len(self._or) == 0
+        return len(self.or_) == 0
 
     def is_complex(self):
-        return len(self._or) > 0
+        return len(self.or_) > 0
 
     def null(self):
         null_query = PackageQuery()
-        null_query._null = True
+        null_query.null_ = True
         return null_query
 
     def to_string(self):
-        return f"{self.pkg_id}\n{self._variants}\n{self._versions}"
+        return f"{self.pkg_id}\n{self.variants_}\n{self.versions_}"
 
     def __repr__(self):
         return self.to_string()

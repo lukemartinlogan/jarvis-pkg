@@ -57,7 +57,7 @@ class DependencyGraph:
             for dep_pkg_query in pkg.dependencies.values():
                 self.all_candidate_packages(dep_pkg_query, order + 1,
                                             pkg_query)
-            for dep_pkg_query in pkg_query._dependencies.values():
+            for dep_pkg_query in pkg_query.dependencies_.values():
                 self.all_candidate_packages(dep_pkg_query, order + 1,
                                             pkg_query)
 
@@ -65,7 +65,8 @@ class DependencyGraph:
         self.pkg_env.add_query(pkg_query, order, parent)
         self.cyclic_set.remove(pkg_query.get_class())
 
-    def filter_row(self, row, candidates_by_class):
+    @staticmethod
+    def filter_row(row, candidates_by_class):
         new_row = []
         for pkg_query in row:
             if pkg_query.parent is not None:
@@ -84,17 +85,14 @@ class DependencyGraph:
             pkg.update_query(isect)
         return True
 
-    def select_installed(self, pkg_query, pkg_by_class):
-        installed = self.pkg_manager.query(pkg_query)
-        if len(installed) == 0:
-            raise Error(ErrorCode.CANT_FIND_PACKAGE).format(pkg_query)
+    def select_installed(self, installed, pkg_by_class):
         for pkg in installed:
-            for dep_pkg_query in pkg.dependencies:
+            for dep_pkg_query in pkg.dependencies_:
                 if not self.select_installed(dep_pkg_query, pkg_by_class):
                     return False
             pkg_class = pkg.pkg_id.cls
             pkg_query_row = self.pkg_env.pkg_queries_by_class[pkg_class]
-            row = pkg_query_row[1]['row']
+            row = pkg_query_row['row']
             if self.pkg_matches_row(pkg, row):
                 pkg_by_class[pkg_class] = pkg
                 return True
@@ -104,9 +102,10 @@ class DependencyGraph:
         # Prioritize installed or introspected candidates
         for candidate in row_candidates:
             self.pkg_manager.introspect(candidate)
-            if self.pkg_manager.is_installed(candidate):
+            installed = self.pkg_manager.query(candidate)
+            if len(installed) > 0:
                 pkg_by_class = {}
-                if self.select_installed(candidate, pkg_by_class):
+                if self.select_installed(installed, pkg_by_class):
                     candidates_by_class.update(pkg_by_class)
                     return candidates_by_class[candidate.pkg_id.cls]
         candidate = row_candidates[0]

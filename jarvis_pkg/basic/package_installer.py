@@ -24,14 +24,18 @@ class PackageInstaller:
         self.package_manager.save()
 
     def download(self, candidate):
-        candidate.source_dir = os.path.join(self.jpkg.pkg_dirs, candidate.get_unique_name())
-        candidate.tmp_source_dir = os.path.join(self.jpkg.tmp_pkg_dirs, candidate.get_unique_name())
-        if candidate._version['git'] is not None:
-            GitNode(candidate._version['git'], candidate.tmp_source_dir, GitOps.CLONE,
-                    branch=candidate._version['branch'],
-                    commit=candidate._version['commit']).Run()
-        elif candidate._version['url'] is not None:
-            wget.download(candidate._version['url'], out=candidate.tmp_source_dir)
+        candidate.source_dir = os.path.join(self.jpkg.pkg_dirs,
+                                            candidate.get_unique_name())
+        candidate.tmp_source_dir = os.path.join(self.jpkg.tmp_pkg_dirs,
+                                                candidate.get_unique_name())
+        if candidate.version_['git'] is not None:
+            GitNode(candidate.version_['git'],
+                    candidate.tmp_source_dir, GitOps.CLONE,
+                    branch=candidate.version_['branch'],
+                    commit=candidate.version_['commit']).Run()
+        elif candidate.version_['url'] is not None:
+            wget.download(candidate.version_['url'],
+                          out=candidate.tmp_source_dir)
 
     def install(self):
         graph = DependencyGraph()

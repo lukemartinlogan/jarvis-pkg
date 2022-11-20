@@ -14,7 +14,7 @@ class PipPackage(Package):
         install_cmd_toks = [
             f"python3 -m pip install",
             f"-e" if 'dev' in pip_conf else None,
-            f"{self.tmp_source_dir}" if 'git' in self._version else pip_conf['pkg_name'],
+            f"{self.tmp_source_dir}" if 'git' in self.version_ else pip_conf['pkg_name'],
             f"-r {reqs}" if "requirements" in pip_conf else None,
         ]
         install_cmd = [tok for tok in install_cmd_toks if tok is not None]

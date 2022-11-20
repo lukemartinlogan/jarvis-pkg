@@ -88,8 +88,8 @@ class Package(PackageQuery):
         self.define_variants()
         self.define_dependencies()
         for v in self.versions:
-            self._versions.add(v['version'])
-        self._version = None
+            self.versions_.add(v['version'])
+        self.version_ = None
         self._install_method = None
         self.is_installed = False
         self.source_dir = None
@@ -157,18 +157,18 @@ class Package(PackageQuery):
 
     def solidify(self, pkg_query):
         self.update_query(pkg_query)
-        self._variants.update(self.variants)
-        self._variants.update(pkg_query._variants)
+        self.variants_.update(self.variants)
+        self.variants_.update(pkg_query.variants_)
         versions = []
         for vinfo in self.versions:
-            if vinfo['version'] not in self._versions:
+            if vinfo['version'] not in self.versions_:
                 continue
-            if not self._variants['root'] and vinfo['needs_root']:
+            if not self.variants_['root'] and vinfo['needs_root']:
                 continue
-            if self._variants['stable'] and not vinfo['stable']:
+            if self.variants_['stable'] and not vinfo['stable']:
                 continue
             versions.append(vinfo)
-        self._version = max(versions, key=lambda x: x['version'])
+        self.version_ = max(versions, key=lambda x: x['version'])
         if len(self.phases):
             self._solidify_install_method(list(self.phases.keys())[0])
 
@@ -193,7 +193,7 @@ class Package(PackageQuery):
         return self.phases[self._install_method][1]
 
     def to_string(self):
-        return f"{self.pkg_id} : {self._version['version']}"
+        return f"{self.pkg_id} : {self.version_['version']}"
 
     def __repr__(self):
         return self.to_string()
@@ -205,10 +205,21 @@ class Package(PackageQuery):
         if self.unique_name is not None:
             return self.unique_name
         sysinfo = hash(SystemInfoNode().Run())
-        variants = hash(str(self._variants))
-        deps = hash(str(self._dependencies))
+        variants = hash(str(self.variants_))
+        deps = hash(str(self.dependencies_))
         method = hash(self._install_method)
         h = abs(hash(sysinfo ^ variants ^ deps ^ method))
         self.unique_name = f"{self.pkg_id.name}-{h}"
         return self.unique_name
+
+    def to_query(self):
+        pkg_query = PackageQuery()
+        pkg_query.copy_query(self)
+        pkg_query.version_ = self.version_
+        pkg_query._install_method = self._install_method
+        pkg_query.is_installed = self.is_installed
+        pkg_query.source_dir = self.source_dir
+        pkg_query.tmp_source_dir = self.tmp_source_dir
+        pkg_query.unique_name = self.unique_name
+        return pkg_query
 
