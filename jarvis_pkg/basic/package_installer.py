@@ -37,11 +37,9 @@ class PackageInstaller:
             wget.download(candidate.version_['url'],
                           out=candidate.tmp_source_dir)
 
-    def install(self):
+    def install(self, pkg_list):
         graph = DependencyGraph()
-        query = PackageQuery()
-        query.pkg_id = PackageId(None, None, 'jarvis_cd')
-        candidates = graph.build([query])
+        candidates = graph.build(pkg_list)
         for candidate in candidates:
             if candidate.is_installed:
                 continue

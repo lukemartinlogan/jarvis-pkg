@@ -1,6 +1,8 @@
 
 from jarvis_pkg.basic.exception import Error,ErrorCode
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
+from jarvis_pkg.basic.manifest_manager import ManifestManager
+from jarvis_pkg.basic.package_id import PackageId
 import re
 
 """
@@ -9,11 +11,13 @@ Syntax: pkg_namespace.pkg_name@vmin:vmax%build_dep@vmin:max^run_dep@vmin:vmax v1
 
 class QueryParser:
     def __init__(self, query_str, pkg_name=None):
+        if isinstance(query_str, list):
+            query_str = " ".join(query_str)
         self.query_str = query_str
         self.pkg_name=pkg_name
         self.pkgs = []
         self.jpkg = JpkgManager().get_instance()
-        self.repo_manager = self.jpkg.repo_manager
+        self.manifest_manager = ManifestManager.get_instance()
 
     @staticmethod
     def _is_variant(tok):
@@ -73,15 +77,10 @@ class QueryParser:
         pkg_id, pkg_vrange = self._parse_pkg_id_version(pkg_dep)
         pkg_namespace,pkg_name = self._parse_pkg_id(pkg_dep, pkg_id)
         min,max = self._parse_pkg_version_range(pkg_dep, pkg_vrange)
-        pkg_classes = self.repo_manager.find_imports(pkg_namespace, pkg_name)
-        if len(pkg_classes) == 0:
-            raise Error(ErrorCode.UNKOWN_PACKAGE).format(pkg_name)
-        pkgs = []
-        for pkg_class in pkg_classes:
-            pkg = pkg_class()
-            pkg.namespace = pkg_namespace
+        pkg_id = PackageId(pkg_namespace, None, pkg_name)
+        pkgs = self.manifest_manager.find_load_pkgs(pkg_id)
+        for pkg in pkgs:
             pkg.intersect_version_range(min,max)
-            pkgs.append(pkg)
         return pkgs
 
     @staticmethod

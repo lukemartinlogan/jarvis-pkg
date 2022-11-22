@@ -45,17 +45,23 @@ class PackageManager:
         }], index=None)
         self.df = pd.concat([self.df, record])
 
+    def _query(self, pkg_query):
+        df = self.df
+        pkg_id = pkg_query.pkg_id
+        if pkg_id.namespace is not None:
+            df = df[df.namespace == pkg_id.namespace]
+        if pkg_id.cls is not None:
+            df = df[df.name == pkg_id.name]
+        if pkg_id.name is not None:
+            df = df[df.name == pkg_id.name]
+        return df
+
     def unregister(self, pkg):
-        return
+        df = self._query(pkg)
+        self.df = self.df.drop(df.index)
 
     def query(self, pkg_query):
-        df = self.df
-        if pkg_query.pkg_id.namespace is not None:
-            df = df[df.namespace == pkg_query.pkg_id.namespace]
-        if pkg_query.pkg_id.cls is not None:
-            df = df[df.cls == pkg_query.pkg_id.cls]
-        if pkg_query.pkg_id.name is not None:
-            df = df[df.name == pkg_query.pkg_id.name]
+        df = self._query(pkg_query)
         return list(df['pkg'])
 
     def list(self, pkg_list):

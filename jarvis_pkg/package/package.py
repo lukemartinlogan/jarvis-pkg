@@ -193,7 +193,10 @@ class Package(PackageQuery):
         return self.phases[self._install_method][1]
 
     def to_string(self):
-        return f"{self.pkg_id} : {self.version_['version']}"
+        if self.version_ is not None:
+            return f"{self.pkg_id} : {self.version_['version']}"
+        else:
+            return f"{self.pkg_id} : {self.versions_}"
 
     def __repr__(self):
         return self.to_string()

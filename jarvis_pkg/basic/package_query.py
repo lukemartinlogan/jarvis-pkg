@@ -1,5 +1,6 @@
 from jarvis_pkg.basic.package_id import PackageId
 from jarvis_pkg.basic.exception import Error, ErrorCode
+from jarvis_pkg.basic.version import Version
 
 
 class PackageQuery:
@@ -39,8 +40,10 @@ class PackageQuery:
     def set_variant(self, key, value):
         self.variants_[key] = value
 
-    def intersect_version_range(self, min, max):
-        self.versions_ = set(v for v in self.versions_ if min <= v <= max)
+    def intersect_version_range(self, v_min, v_max):
+        v_min = Version(v_min)
+        v_max = Version(v_max)
+        self.versions_ = set(v for v in self.versions_ if v_min <= v <= v_max)
 
     @staticmethod
     def set_id_part(my_name, other_name):
