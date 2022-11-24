@@ -1,6 +1,4 @@
-from jarvis_pkg.dependency_graph.dependency_graph import DependencyGraph
-from .package_query import PackageQuery
-from .package_id import PackageId
+from jarvis_pkg.basic.dependency_graph import DependencyGraph
 from jarvis_cd import *
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.basic.package_manager import PackageManager
