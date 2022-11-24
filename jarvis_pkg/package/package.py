@@ -92,8 +92,9 @@ class Package(PackageQuery):
         self.version_ = None
         self._install_method = None
         self.is_installed = False
+        self.is_solidified = False
+        self.install_dir = None
         self.source_dir = None
-        self.tmp_source_dir = None
         self.unique_name = None
 
     @abstractmethod
@@ -171,6 +172,7 @@ class Package(PackageQuery):
         self.version_ = max(versions, key=lambda x: x['version'])
         if len(self.phases):
             self._solidify_install_method(list(self.phases.keys())[0])
+        self.is_solidified = True
 
     def _load_superclass_decorators(self):
         self.phases = {} # pkg_name -> (needs_root, [phase_functions])
@@ -190,6 +192,8 @@ class Package(PackageQuery):
             self.__dict__[phase_conf.__name__] = phase_conf
 
     def get_phases(self):
+        if self._install_method is None:
+            return []
         return self.phases[self._install_method][1]
 
     def to_string(self):
@@ -207,9 +211,12 @@ class Package(PackageQuery):
     def get_unique_name(self):
         if self.unique_name is not None:
             return self.unique_name
+        if not self.is_solidified:
+            print("ERROR: this package is not yet solidified!")
+            exit(1)
         sysinfo = hash(SystemInfoNode().Run())
         variants = hash(str(self.variants_))
-        deps = hash(str(self.dependencies_))
+        deps = hash(str(self.final_deps_))
         method = hash(self._install_method)
         h = abs(hash(sysinfo ^ variants ^ deps ^ method))
         self.unique_name = f"{self.pkg_id.name}-{h}"
@@ -221,8 +228,10 @@ class Package(PackageQuery):
         pkg_query.version_ = self.version_
         pkg_query._install_method = self._install_method
         pkg_query.is_installed = self.is_installed
+        pkg_query.is_solidified = self.is_solidified
+        pkg_query.final_deps_ = self.final_deps_
         pkg_query.source_dir = self.source_dir
-        pkg_query.tmp_source_dir = self.tmp_source_dir
+        pkg_query.install_dir = self.install_dir
         pkg_query.unique_name = self.unique_name
         return pkg_query
 

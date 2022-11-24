@@ -85,9 +85,11 @@ class DependencyGraph:
             pkg.update_query(isect)
         return True
 
-    def select_installed(self, installed, pkg_by_class):
+    def select_installed(self, candidate, pkg_by_class):
+        installed = self.pkg_manager.query(candidate)
         for pkg in installed:
-            for dep_pkg_query in pkg.dependencies_:
+            deps = self.pkg_manager.find_by_name(pkg.final_deps_)
+            for dep_pkg_query in deps:
                 if not self.select_installed(dep_pkg_query, pkg_by_class):
                     return False
             pkg_class = pkg.pkg_id.cls
@@ -102,10 +104,9 @@ class DependencyGraph:
         # Prioritize installed or introspected candidates
         for candidate in row_candidates:
             self.pkg_manager.introspect(candidate)
-            installed = self.pkg_manager.query(candidate)
-            if len(installed) > 0:
+            if self.pkg_manager.is_installed(candidate):
                 pkg_by_class = {}
-                if self.select_installed(installed, pkg_by_class):
+                if self.select_installed(candidate, pkg_by_class):
                     candidates_by_class.update(pkg_by_class)
                     return candidates_by_class[candidate.pkg_id.cls]
         candidate = row_candidates[0]
@@ -121,6 +122,7 @@ class DependencyGraph:
             row = pkg_query_row[1]['row']
             unique_names = pkg_query_row[1]['unique_names']
 
+            # An installed package already uses this dependency
             if cls in candidates_by_class:
                 final_candidate = candidates_by_class[cls]
                 candidates.insert(0, final_candidate)
@@ -151,4 +153,13 @@ class DependencyGraph:
             self.all_candidate_packages(pkg_query, 0, None)
         ordered_queries = self.pkg_env.ordered_queries()
         candidates = self.build_candidates(ordered_queries)
+        candidate_map = {c.pkg_id.cls: c for c in candidates}
+        for candidate in candidates:
+            if candidate.is_installed:
+                continue
+            for cls in candidate.dependencies.keys():
+                if cls in candidate_map:
+                    candidate.dependencies_[cls] = candidate_map[cls]
+                    candidate.final_deps_[cls] = \
+                        candidate_map[cls].get_unique_name()
         return candidates

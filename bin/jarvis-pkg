@@ -22,6 +22,8 @@ class JarvisPkgOp(Enum):
     UPDATE = "update"
     LOAD = "load"
     LIST = "list"
+    INFO = "info"
+    VERSIONS = "versions"
     FIND = "find"
     REPO = "repo"
 
@@ -41,18 +43,28 @@ if __name__ == '__main__':
         installer = PackageInstaller.get_instance()
         installer.install(pkg_list)
         installer.save()
-    if args.op == JarvisPkgOp.UPDATE:
+    elif args.op == JarvisPkgOp.UPDATE:
+        parser = QueryParser(args.remainder).parse()
+        pkg_list = parser.pkgs
         installer = PackageInstaller.get_instance()
-        installer.update()
-    if args.op == JarvisPkgOp.UNINSTALL:
+        installer.update(pkg_list)
+    elif args.op == JarvisPkgOp.UNINSTALL:
+        parser = QueryParser(args.remainder).parse()
+        pkg_list = parser.pkgs
+        installer = PackageInstaller.get_instance()
+        installer.uninstall(pkg_list)
+        installer.save()
+    elif args.op == JarvisPkgOp.LOAD:
         pass
-    if args.op == JarvisPkgOp.LOAD:
+    elif args.op == JarvisPkgOp.LIST:
         pass
-    if args.op == JarvisPkgOp.LIST:
+    elif args.op == JarvisPkgOp.INFO:
         pass
-    if args.op == JarvisPkgOp.FIND:
+    elif args.op == JarvisPkgOp.VERSIONS:
         pass
-    if args.op == JarvisPkgOp.REPO:
+    elif args.op == JarvisPkgOp.FIND:
+        pass
+    elif args.op == JarvisPkgOp.REPO:
         manifest = ManifestManager.get_instance()
         manifest.parse_args(args.remainder)
         manifest.save()

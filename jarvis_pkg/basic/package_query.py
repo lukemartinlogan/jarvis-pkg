@@ -6,9 +6,11 @@ from jarvis_pkg.basic.version import Version
 class PackageQuery:
     def __init__(self):
         self.pkg_id = PackageId(None, None, None)
+        self.version_ = None
         self.versions_ = set()
         self.variants_ = {}
         self.dependencies_ = {}
+        self.final_deps_ = {}
         self.parent_ = None
         self.null_ = False
         self.or_ = []
@@ -133,7 +135,10 @@ class PackageQuery:
         return null_query
 
     def to_string(self):
-        return f"{self.pkg_id}\n{self.variants_}\n{self.versions_}"
+        if self.version_ is not None:
+            return f"{self.pkg_id}\n{self.version_}"
+        else:
+            return f"{self.pkg_id}\n{self.variants_}\n{self.versions_}"
 
     def __repr__(self):
         return self.to_string()
