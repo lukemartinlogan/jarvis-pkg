@@ -107,7 +107,13 @@ class PackageManager:
         return len(self.query(pkg_query)) > 0
 
     def list(self, pkg_list):
-        return
+        if len(pkg_list) == 0:
+            print(self.df)
+            return
+        for pkg_query in pkg_list:
+            pkgs = self._query(pkg_query)
+            print(pkg_query)
+            print(pkgs)
 
     def info(self, pkg_list):
         return

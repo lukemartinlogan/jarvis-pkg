@@ -8,6 +8,7 @@ jpkg install pkg_name@version variant=a variant=b +variant -variant ^ dep_name v
 
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.basic.manifest_manager import ManifestManager
+from jarvis_pkg.basic.package_manager import PackageManager
 from jarvis_pkg.basic.package_installer import PackageInstaller
 from jarvis_pkg.basic.query_parser import QueryParser
 
@@ -57,13 +58,19 @@ if __name__ == '__main__':
     elif args.op == JarvisPkgOp.LOAD:
         pass
     elif args.op == JarvisPkgOp.LIST:
-        pass
+        parser = QueryParser(args.remainder).parse()
+        pkg_list = parser.pkgs
+        manifest = ManifestManager.get_instance()
+        manifest.parse_args(args.remainder)
     elif args.op == JarvisPkgOp.INFO:
         pass
     elif args.op == JarvisPkgOp.VERSIONS:
         pass
     elif args.op == JarvisPkgOp.FIND:
-        pass
+        parser = QueryParser(args.remainder).parse()
+        pkg_list = parser.pkgs
+        pkg_manager = PackageManager.get_instance()
+        pkg_manager.list(pkg_list)
     elif args.op == JarvisPkgOp.REPO:
         manifest = ManifestManager.get_instance()
         manifest.parse_args(args.remainder)
