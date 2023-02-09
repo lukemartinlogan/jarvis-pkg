@@ -109,3 +109,6 @@ class JpkgManifestManager:
             return matches[0]
         else:
             return None
+
+    def save(self):
+        self.repos.to_parquet(self.jpkg.manifest_path)
