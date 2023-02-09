@@ -3,15 +3,15 @@ import copy
 
 
 class PackageQuery:
-    def __init__(self, namespace=None, name=None, cls=None):
+    def __init__(self, repo=None, name=None, cls=None):
         self.manifest = JpkgManifestManager.get_instance()
-        self.namespace = namespace
+        self.repo = repo
         self.name = name
         self.cls = cls
         self.variants = {}      # a dict of keys -> variant options
         self.versions = []      # a list of Version ranges
         self.dependencies = {}  # a dict of PackageQuery
-        if namespace is None and name is None and cls is None:
+        if repo is None and name is None and cls is None:
             self.is_null = True
         else:
             self.is_null = False
@@ -22,9 +22,9 @@ class PackageQuery:
     def intersect(self, other):
         new_query = copy.deepcopy(self)
         # Namespace
-        if other.namespace is not None:
-            if self.namespace is None or other.namespace == self.namespace:
-                new_query.namespace = other.namespace
+        if other.repo is not None:
+            if self.repo is None or other.repo == self.repo:
+                new_query.repo = other.repo
             else:
                 return PackageQuery()
         # Class

@@ -3,8 +3,6 @@ This file is an index to all important paths in jpkg
 
 1. manifests: the set of all packages
 2. installed: the set of all installed packages
-3. setup.log: records the installation process to avoid repetition in
-case of failure
 """
 
 import os, sys

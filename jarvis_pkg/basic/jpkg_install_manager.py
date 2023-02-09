@@ -10,6 +10,7 @@ case of failure
 import os, sys
 import pathlib
 import pandas as pd
+from jarvis_pkg.util.system_info import SystemInfo
 
 
 class JpkgInstallManager:
@@ -22,8 +23,10 @@ class JpkgInstallManager:
         return JpkgInstallManager.instance_
 
     def __init__(self):
+        # TODO(llogan): add sysinfo to the dataframe filter
         self.columns = [
-            'namespace', 'cls', 'name', 'version', 'uuid', 'ref', 'pkg'
+            'repo', 'cls', 'name', 'version',
+            'sysinfo', 'uuid', 'ref', 'pkg'
         ]
         self.df = pd.DataFrame(columns=self.columns)
         self.jpkg = JpkgInstallManager.get_instance()
@@ -37,7 +40,9 @@ class JpkgInstallManager:
         else:
             pkg.is_installed = True
             self.df += pd.DataFrame(
-                [[pkg.namespace, pkg.cls, pkg.name, pkg.version_, 0, pkg]],
+                [[pkg.repo, pkg.cls, pkg.name, pkg.version_,
+                  SystemInfo.get_instance(), pkg.uuid_,
+                  0, pkg]],
                 columns=self.columns)
 
     def get_refcnt(self, pkg):
@@ -86,8 +91,8 @@ class JpkgInstallManager:
         :return:
         """
         df = self.df
-        if pkg_query.namespace is not None:
-            df = df[df.namespace == pkg_query.namespace]
+        if pkg_query.repo is not None:
+            df = df[df.repo == pkg_query.repo]
         if pkg_query.cls is not None:
             df = df[df.cls == pkg_query.cls]
         if pkg_query.name is not None:
@@ -96,6 +101,7 @@ class JpkgInstallManager:
             for rng in pkg_query.versions:
                 df = df[(rng[0] <= df.version) &
                         (df.version <= rng[1])]
+        df = df[df.sysinfo == SystemInfo.get_instance()]
         if len(df) == 0:
             return []
         pkgs = list(df['pkg'])
