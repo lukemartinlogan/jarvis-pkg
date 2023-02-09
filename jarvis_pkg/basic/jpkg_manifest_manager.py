@@ -12,12 +12,6 @@ import enum
 import argparse
 
 
-class JarvisPkgManifestOp(Enum):
-    ADD = "add"
-    RM = "rm"
-    LIST = "ls"
-
-
 class JpkgManifestManager:
     instance_ = None
 
@@ -62,18 +56,32 @@ class JpkgManifestManager:
         self.repos += pd.DataFrame(repos, columns=self.columns)
 
     def rm_repo(self, repo):
+        """
+        Untrack all packages relating to the repo
+
+        :param repo: the repo to remove
+        :return:
+        """
+
         df = self.repos
         self.repos = df[df.repo != repo]
 
     def list(self, repo=None):
+        """
+        List 
+        
+        :param repo: 
+        :return: 
+        """
+        
         df = self.repos
         if repo is not None:
             df = df[df.repo == repo]
-        nses = list(df['repo'])
+        repos = list(df['repo'])
         clses = list(df['cls'])
         names = list(df['name'])
-        for ns, cls, pkg_name in zip(nses, clses, names):
-            print(f"{ns}.{cls}.{pkg_name}")
+        for repo, cls, pkg_name in zip(repos, clses, names):
+            print(f"{repo}.{cls}.{pkg_name}")
 
     def _import_pkg(self, repo, name, installer, repo_path=None):
         """
@@ -104,6 +112,16 @@ class JpkgManifestManager:
         return getattr(module, class_name)
 
     def _load_pkg(self, repo, name, installer, repo_path=None):
+        """
+        Create an instance of a package.
+
+        :param repo: the repo where the package is located
+        :param name: the name of the package
+        :param installer: the installer to use for the package
+        :param repo_path: the path on the filesystem where the repo resides
+        :return:
+        """
+
         pkg_cls = self._import_pkg(repo, name, installer,
                                    repo_path=repo_path)
         if pkg_cls is None:
@@ -112,6 +130,14 @@ class JpkgManifestManager:
         return pkg_cls()
 
     def load_pkgs(self, repo, name):
+        """
+        Load all installation methods of a package for a particular repo
+
+        :param repo: The repo to search
+        :param name: The name of the package to load
+        :return:
+        """
+
         df = self.repos
         df = df[(df.repo == repo) & (df.name == name)]
         installers = list(df.installer)
@@ -122,6 +148,13 @@ class JpkgManifestManager:
         return pkgs
 
     def match(self, pkg_query):
+        """
+        The set of all packages which match the query
+
+        :param pkg_query: the query to resolve
+        :return:
+        """
+
         df = self.repos
         if pkg_query.repo is not None:
             df = df[df.repo == pkg_query.repo]
@@ -143,6 +176,13 @@ class JpkgManifestManager:
         return matches
 
     def solidify(self, pkg_query):
+        """
+        Any package which matches the query
+
+        :param pkg_query:
+        :return:
+        """
+
         matches = self.match(pkg_query)
         if len(matches):
             return matches[0]

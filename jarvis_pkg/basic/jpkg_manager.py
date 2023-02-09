@@ -27,18 +27,3 @@ class JpkgManager:
                                           'manifest.parquet')
         self.installed_path = os.path.join(self.jpkg_state_dir,
                                            'installed.parquet')
-
-    def _create_installed(self, path):
-        if not os.path.exists(self.installed_path):
-            columns = [
-                'name', 'cls', 'version', 'ref', 'pkg'
-            ]
-            df = pd.DataFrame(columns=columns)
-            df.to_parquet()
-
-    def _create_manifests(self, path):
-        if not os.path.exists(self.manifest_path):
-            columns = [
-                'name', 'cls', 'pkg'
-            ]
-            df = pd.DataFrame(columns=columns)

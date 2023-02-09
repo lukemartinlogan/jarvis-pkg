@@ -8,7 +8,6 @@ jpkg install pkg_name@version variant=a variant=b +variant -variant ^ dep_name v
 
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
-from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManagerArgs
 import argparse
 from enum import Enum
 import sys
