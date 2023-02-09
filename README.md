@@ -12,14 +12,6 @@ without discarding the software already on the system.
 Users can register externally-built libraries or modulefiles to allow jarvis-pkg to take
 full advantage of the software already installed on the system.
 
-## Dependencies
-
-* jarvis-cd
-
-## Installation
-
-This repo is installed as part of the Jarvis system.
-
 ## Usage
 
 In order to use distro-specific package managers, you must specify your specific distro.

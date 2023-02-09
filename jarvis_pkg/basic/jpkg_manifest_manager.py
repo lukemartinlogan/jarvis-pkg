@@ -2,8 +2,7 @@
 
 """
 
-from jarvis_cd import *
-from jarvis_cd.serialize.yaml_file import YAMLFile
+from jarvis_pkg.util.naming import to_camel_case
 import os, sys
 import pathlib
 import pandas as pd
@@ -71,7 +70,7 @@ class JpkgManifestManager:
             path = path_df.iloc[0]
         if path is None:
             return None
-        class_name = ToCamelCase(name)
+        class_name = to_camel_case(name)
         sys.path.insert(0, path)
         module = __import__(f"{import_str}.package", fromlist=[class_name])
         sys.path.pop(0)
@@ -84,7 +83,7 @@ class JpkgManifestManager:
                             f"{namespace}.{name}")
         return pkg_cls()
 
-    def solidify(self, pkg_query):
+    def match(self, pkg_query):
         df = self.repos
         if pkg_query.namespace is not None:
             df = df[df.namespace == pkg_query.namespace]
@@ -93,12 +92,20 @@ class JpkgManifestManager:
         if pkg_query.name is not None:
             df = df[df.name == pkg_query.name]
         if len(df) == 0:
-            return None
+            return []
         pkg_names = list(df['name'])
         pkg_nses = list(df['namespace'])
+        matches = []
         for name, namespace in zip(pkg_names, pkg_nses):
             pkg = self.load_pkg(namespace, name)
             solid_pkg = pkg.from_query(pkg_query)
             if solid_pkg is not None:
-                return solid_pkg
-        return None
+                matches.append(solid_pkg)
+        return matches
+
+    def solidify(self, pkg_query):
+        matches = self.match(pkg_query)
+        if len(matches):
+            return matches[0]
+        else:
+            return None

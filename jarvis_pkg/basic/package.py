@@ -1,4 +1,5 @@
 from .package_query import PackageQuery
+from jarvis_pkg.util.system_info import SystemInfo
 from abc import ABC, abstractmethod
 
 
@@ -14,6 +15,7 @@ class Package(ABC):
         self.variants_ = None
         self.dependencies_ = None
         self.version_ = None
+        self.uuid_ = None
         self.is_installed = False
         self.define_versions()
         self.define_variants()
@@ -62,6 +64,8 @@ class Package(ABC):
                 self.variants_[key] = val
             else:
                 return None
+        # Make uuid
+        self.make_uuid()
         return self
 
     def _version_in_range(self, version, ranges):
@@ -69,3 +73,11 @@ class Package(ABC):
             if rng[0] >= version or version >= rng[1]:
                 return False
         return True
+
+    def make_uuid(self):
+        variants = hash(str(self.variants_))
+        version = hash(self.version_)
+        dependencies = hash(self.dependencies_)
+        sysinfo = hash(SystemInfo.get_instance())
+        self.uuid_ = hash(variants ^ version ^ dependencies ^ sysinfo)
+        return self
