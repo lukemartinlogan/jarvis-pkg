@@ -7,9 +7,12 @@ jpkg install pkg_name@version variant=a variant=b +variant -variant ^ dep_name v
 """
 
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
+from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
+from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManagerArgs
 import argparse
 from enum import Enum
 import sys
+
 
 class JarvisPkgOp(Enum):
     REGISTER = "register"
@@ -21,23 +24,26 @@ class JarvisPkgOp(Enum):
     FIND = "find"
     REPO = "repo"
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='jpkg')
-    parser.add_argument('op', metavar='operation', type=JarvisPkgOp, choices=list(JarvisPkgOp), help="The jarvis-pkg operation")
-    parser.add_argument('remaining', nargs=argparse.REMAINDER)
-    args = parser.parse_args(sys.argv)
 
-    if args.op == JarvisPkgOp.INSTALL:
-        pass
-    if args.op == JarvisPkgOp.UPDATE:
-        pass
-    if args.op == JarvisPkgOp.UNINSTALL:
-        pass
-    if args.op == JarvisPkgOp.LOAD:
-        pass
-    if args.op == JarvisPkgOp.LIST:
-        pass
-    if args.op == JarvisPkgOp.FIND:
-        pass
-    if args.op == JarvisPkgOp.REPO:
-        pass
+class JpkgParseArgs:
+    def __init__(self, args):
+        op = args[0]
+        if op == JarvisPkgOp.INSTALL:
+            pass
+        elif op == JarvisPkgOp.UPDATE:
+            pass
+        elif op == JarvisPkgOp.UNINSTALL:
+            pass
+        elif op == JarvisPkgOp.LOAD:
+            pass
+        elif op == JarvisPkgOp.LIST:
+            pass
+        elif op == JarvisPkgOp.FIND:
+            pass
+        elif op == JarvisPkgOp.REPO:
+            pass
+
+
+if __name__ == '__main__':
+    args = JpkgParseArgs(sys.argv)
+
