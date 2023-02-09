@@ -7,8 +7,6 @@ This file is an index to all important paths in jpkg
 case of failure
 """
 
-from jarvis_cd import *
-from jarvis_cd.serialize.yaml_file import YAMLFile
 import os, sys
 import pathlib
 import pandas as pd
