@@ -121,9 +121,11 @@ class Package(ABC):
         # Solidify version
         self.all_versions.sort(reverse=True,
                                key=lambda x: x['version'])
-        for version in self.all_versions:
+        for version_info in self.all_versions:
+            version = version_info['version']
             if self._version_in_range(version, pkg_query.versions):
-                self.version_ = version['version']
+                self.version_ = version
+                break
         if self.version_ is None:
             return None
         # Solidify variants
@@ -154,7 +156,7 @@ class Package(ABC):
 
     def _version_in_range(self, version, ranges):
         for rng in ranges:
-            if rng[0] >= version or version >= rng[1]:
+            if rng[0] > version or version > rng[1]:
                 return False
         return True
 
