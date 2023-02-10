@@ -2,9 +2,9 @@
 from jarvis_pkg.basic.package import Package
 
 
-class APackage(Package):
+class BPackage(Package):
     def define_class(self):
-        self.classify('A')
+        self.classify('B')
 
     def define_versions(self):
         self.version('3.0.0')

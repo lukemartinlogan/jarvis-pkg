@@ -25,7 +25,7 @@ def uninstall():
 
 
 class Package(ABC):
-    def __init__(self):
+    def __init__(self, do_full_load):
         super().__init__()
         self.manifest = JpkgManifestManager.get_instance()
         self.name = self._get_name()
@@ -42,14 +42,16 @@ class Package(ABC):
         self.uuid_ = None
         self.is_installed = False
 
+        self.define_class()
         self.define_versions()
         self.define_variants()
-        self.define_dependencies()
+        if do_full_load:
+            self.define_dependencies()
 
     def _get_name(self):
-        cls = self.__class__.__name__
-        cls = cls.replace("Package", "")
-        return to_snake_case(cls)
+        name = self.__class__.__name__
+        name = name.replace("Package", "")
+        return to_snake_case(name)
 
     def classify(self, cls):
         self.cls = cls

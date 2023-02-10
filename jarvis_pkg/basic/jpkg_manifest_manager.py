@@ -48,8 +48,9 @@ class JpkgManifestManager:
             for installer in installers:
                 pkg = self._load_pkg(repo, pkg_name, installer,
                                      repo_path=repo_path)
-                repos += [repo, pkg.cls, pkg_name, installer, repo_path]
-        self.repos += pd.DataFrame(repos, columns=self.columns)
+                repos.append([repo, pkg.cls, pkg_name, installer, repo_path])
+        self.repos = pd.concat([self.repos,
+                                pd.DataFrame(repos, columns=self.columns)])
 
     def rm_repo(self, repo):
         """
@@ -62,9 +63,9 @@ class JpkgManifestManager:
         df = self.repos
         self.repos = df[df.repo != repo]
 
-    def list(self, repo=None):
+    def list_repo(self, repo=None):
         """
-        List 
+        List all packages corresponding to a repo
         
         :param repo: 
         :return: 
@@ -76,8 +77,13 @@ class JpkgManifestManager:
         repos = list(df['repo'])
         clses = list(df['cls'])
         names = list(df['name'])
-        for repo, cls, pkg_name in zip(repos, clses, names):
-            print(f"{repo}.{cls}.{pkg_name}")
+        installers = list(df['installer'])
+        return list(zip(repos, clses, names, installers))
+
+    def print_repo(self, repo=None):
+        rows = self.list_repo(repo)
+        for repo, cls, pkg_name, installer in rows:
+            print(f"{repo}.{cls}.{pkg_name}/{installer}")
 
     def _import_pkg(self, repo, name, installer, repo_path=None):
         """
@@ -101,7 +107,7 @@ class JpkgManifestManager:
             repo_path = path_df.iloc[0]
         if repo_path is None:
             return None
-        class_name = to_camel_case(name)
+        class_name = to_camel_case(f"{name}_package")
         sys.path.insert(0, repo_path)
         module = __import__(import_str, fromlist=[class_name])
         sys.path.pop(0)
@@ -123,7 +129,10 @@ class JpkgManifestManager:
         if pkg_cls is None:
             raise Exception(f"Could not import invalid package: "
                             f"{repo}.{name}.{installer}")
-        return pkg_cls()
+        if repo_path is None:
+            return pkg_cls(True)
+        else:
+            return pkg_cls(False)
 
     def load_pkgs(self, repo, name):
         """
