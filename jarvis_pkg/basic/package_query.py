@@ -8,9 +8,7 @@ from enum import Enum
 class QueryTok:
     VERSION_TOK = 'VERSION_TOK'
     COLON = 'COLON'
-    DOT = 'DOT'
     VERSION = 'VERSION'
-    NAME = 'NAME'
     TEXT = 'TEXT'
     PLUS = 'PLUS'
     MINUS = 'MINUS'
@@ -98,7 +96,7 @@ class PackageQuery:
         """
         queries = text.split('%')
         self._parse_query(queries[0])
-        for query_text in queries:
+        for query_text in queries[1:]:
             dep_query = PackageQuery(query_text)
             self.dependencies[dep_query.cls] = dep_query
 
@@ -117,18 +115,22 @@ class PackageQuery:
         self._parse2()
 
     def _parse1(self, query_text):
+        """
+        Divides the query text into tokens.
+
+        :param query_text:
+        :return:
+        """
         i = 0
         self.is_null = False
-        toks = re.split('([\.@\:\+\-= ])', query_text)
-        toks = [tok for tok in toks if len(tok) != 0]
+        toks = re.split('([@\:\+\-=])|\s+', query_text)
+        toks = [tok for tok in toks if tok is not None and len(tok) != 0]
         while i < len(toks):
             tok = toks[i]
             if tok == '@':
                 self.nodes.append(QueryNode(QueryTok.VERSION_TOK, tok))
             elif tok == ':':
                 self.nodes.append(QueryNode(QueryTok.COLON, tok))
-            elif tok == '.':
-                self.nodes.append(QueryNode(QueryTok.DOT, tok))
             elif tok == '+':
                 self.nodes.append(QueryNode(QueryTok.PLUS, tok))
             elif tok == '-':
@@ -137,8 +139,6 @@ class PackageQuery:
                 self.nodes.append(QueryNode(QueryTok.EQUALS, tok))
             elif self._is_version(toks, i):
                 self.nodes.append(QueryNode(QueryTok.VERSION, tok))
-            elif self._is_name(toks, i):
-                self.nodes.append(QueryNode(QueryTok.NAME, tok))
             else:
                 self.nodes.append(QueryNode(QueryTok.TEXT, tok))
             i += 1
@@ -148,26 +148,37 @@ class PackageQuery:
         while i < len(self.nodes):
             if self.check_node_type(i, QueryTok.VERSION_TOK):
                 i = self._parse_version_range(i + 1)
-            elif self.check_node_type(i, QueryTok.NAME):
+            elif self.check_node_type(i, QueryTok.TEXT):
                 i = self._parse_variant(i)
             elif self.check_node_type(i, QueryTok.PLUS):
+                i = self._parse_plus_minus_variant(i)
+            elif self.check_node_type(i, QueryTok.MINUS):
                 i = self._parse_plus_minus_variant(i)
             else:
                 raise Exception(f"Invalid token: {self.nodes[i].tok}")
 
     def _parse_name(self):
-        # [NAME] [.] [NAME]
-        if self.check_pattern(0, QueryTok.NAME, QueryTok.DOT, QueryTok.NAME):
-            self.repo = self.nodes[0].tok
-            self.cls = self.manifest.get_class(self.nodes[2].tok)
-            if self.cls != self.nodes[2].tok:
-                self.name = self.nodes[2].tok
-            return 3
-        # [NAME]
-        if self.check_pattern(0, QueryTok.NAME):
-            self.cls = self.manifest.get_class(self.nodes[0].tok)
-            if self.cls != self.nodes[0].tok:
-                self.name = self.nodes[0].tok
+        if self.check_pattern(0, QueryTok.TEXT, QueryTok.EQUALS):
+            # This is a variant, not a package name
+            return 0
+        if self.check_pattern(0, QueryTok.TEXT):
+            name_toks = self.get_tok(0).split('.')
+            # [NAME] [.] [NAME] [.] [NAME]
+            if len(name_toks) == 3:
+                self.repo = name_toks[0]
+                self.cls = name_toks[1]
+                self.name = name_toks[2]
+            # [NAME] [.] [NAME]
+            elif len(name_toks) == 2:
+                self.repo = name_toks[0]
+                self.cls = self.manifest.get_class(name_toks[1])
+                if self.cls != name_toks[1]:
+                    self.name = name_toks[1]
+            # [NAME]
+            else:
+                self.cls = self.manifest.get_class(name_toks[0])
+                if self.cls != name_toks[0]:
+                    self.name = name_toks[0]
             return 1
         return 0
 
@@ -180,34 +191,42 @@ class PackageQuery:
             self.intersect_version_range(min, max)
             return i + 3
         # [VERSION] [:]
-        if self.check_pattern(i, QueryTok.VERSION, QueryTok.COLON):
+        elif self.check_pattern(i, QueryTok.VERSION, QueryTok.COLON):
             min = Version(self.get_tok(i))
             max = Version('max')
             self.intersect_version_range(min, max)
             return i + 2
         # [:] [VERSION]
-        if self.check_pattern(i, QueryTok.COLON, QueryTok.VERSION):
+        elif self.check_pattern(i, QueryTok.COLON, QueryTok.VERSION):
             min = Version('min')
             max = Version(self.get_tok(i + 1))
             self.intersect_version_range(min, max)
             return i + 2
         # [:]
-        if self.check_pattern(i, QueryTok.COLON, QueryTok.VERSION):
+        elif self.check_pattern(i, QueryTok.COLON, QueryTok.VERSION):
             min = Version('min')
             max = Version('max')
             self.intersect_version_range(min, max)
             return i + 1
+        # [VERSION]
+        elif self.check_pattern(i, QueryTok.VERSION):
+            min = Version(self.get_tok(i))
+            max = Version(self.get_tok(i))
+            self.intersect_version_range(min, max)
+            return i + 1
+        else:
+            raise Exception("Couldn't parse version range")
 
     def _parse_variant(self, i):
-        # [NAME] = [TEXT]
-        if self.check_pattern(i, QueryTok.NAME, QueryTok.EQUALS, QueryTok.TEXT):
-            key = self.get_tok(i)
-            val = self.get_tok(i + 2)
-            self.variants[key] = val
-            return i + 3
-        # [NAME] = [NAME]
-        if self.check_pattern(i, QueryTok.NAME, QueryTok.EQUALS,
-                              QueryTok.NAME):
+        # [TEXT] = [TEXT]
+        p1 = self.check_pattern(i, QueryTok.TEXT,
+                                QueryTok.EQUALS,
+                                QueryTok.TEXT)
+        # [TEXT] = [VERSION]
+        p2 = self.check_pattern(i, QueryTok.TEXT,
+                                QueryTok.EQUALS,
+                                QueryTok.VERSION)
+        if p1 or p2:
             key = self.get_tok(i)
             val = self.get_tok(i + 2)
             self.variants[key] = val
@@ -216,14 +235,16 @@ class PackageQuery:
             raise Exception(f"Invalid variant definition: {self.get_tok(i)}")
 
     def _parse_plus_minus_variant(self, i):
-        # [+] [NAME]
-        if self.check_pattern(i, QueryTok.PLUS, QueryTok.NAME):
+        # [+] [TEXT]
+        if self.check_pattern(i, QueryTok.PLUS, QueryTok.TEXT):
             key = self.get_tok(i + 1)
             self.variants[key] = True
-        # [-] [NAME]
-        elif self.check_pattern(i, QueryTok.MINUS, QueryTok.NAME):
+            return i + 2
+        # [-] [TEXT]
+        elif self.check_pattern(i, QueryTok.MINUS, QueryTok.TEXT):
             key = self.get_tok(i + 1)
             self.variants[key] = False
+            return i + 2
         else:
             raise Exception(f"Invalid variant definition: "
                             f"{self.get_tok(i + 1)}")
@@ -241,7 +262,7 @@ class PackageQuery:
         return True
 
     def get_tok(self, i):
-        if i < self.nodes:
+        if i < len(self.nodes):
             return self.nodes[i].tok
         return None
 
@@ -253,6 +274,15 @@ class PackageQuery:
             return False
         second = re.match('[a-zA-Z0-9_]', text)
         return True
+
+    @staticmethod
+    def _is_int(toks, i):
+        try:
+            int(toks[i])
+        except ValueError:
+            return False
+        else:
+            return True
 
     @staticmethod
     def _is_version(toks, i):
