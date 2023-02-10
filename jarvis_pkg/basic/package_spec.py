@@ -51,7 +51,7 @@ class PackageSpec:
         :return:
         """
 
-        pkgs = self.manifest.resolve_query(pkg_query)
+        pkgs = self.manifest.match(pkg_query)
         if len(pkgs) == 0:
             raise Exception(f"Couldn't resolve query: {pkg_query}")
         self.install_order[pkg_query.cls] = order
@@ -60,7 +60,7 @@ class PackageSpec:
         cur_env[pkg_query.cls] = True
         for pkg in pkgs:
             cur_env[pkg.cls] = True
-            for dep_query in pkg.dependencies:
+            for dep_query in pkg.all_dependencies:
                 self.get_install_order(dep_query, order + 1, cur_env)
         del cur_env[pkg_query.cls]
 
@@ -75,7 +75,7 @@ class PackageSpec:
         query = PackageQuery(cls=cls)
         for pkg_query in row:
             new_query = query.intersect(pkg_query)
-            if new_query.is_null():
+            if new_query.is_null:
                 raise Exception(f"Conflicting dependencies: "
                                 f"{pkg_query} and {query}")
             query = new_query
@@ -91,9 +91,9 @@ class PackageSpec:
         for cls in self.install_order:
             pkg_query = self.smash_class_row(cls)
             pkg = self.installed.solidify(pkg_query)
-            if pkg.is_null():
+            if pkg.is_null:
                 pkg = self.manifest.solidify(pkg_query)
-            if pkg.is_null():
+            if pkg.is_null:
                 raise Exception(f"Couldn't resolve query: {pkg_query}")
             self.spec[cls] = pkg
             dep_queries = pkg.get_dependencies(self.spec)
@@ -101,5 +101,12 @@ class PackageSpec:
                 self.class_queries[dep_query.cls].append(dep_query)
 
     def solidify_install_order(self):
+        """
+        Build the order with which packages should be installed in the
+        JpkgInstallManager
+
+        :return:
+        """
+        self.install_order.sort(key=lambda x: x[1], reverse=True)
         for cls in self.install_order:
             self.install_graph.append(self.spec[cls])

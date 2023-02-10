@@ -57,11 +57,11 @@ class JpkgInstallManager:
             self.unregister_package(dep_pkg)
 
     def install_spec(self, pkg_spec):
-        for pkg in pkg_spec.install_order:
+        for pkg in pkg_spec.install_graph:
             phases = pkg.install_phases
             for phase in phases:
                 try:
-                    pkg.__dict__[phase](pkg, pkg.spec)
+                    phase(pkg, pkg_spec.spec)
                 except Exception as e:
                     print(e)
                     return
@@ -75,7 +75,7 @@ class JpkgInstallManager:
         self.unregister_package(pkg)
         phases = pkg.uninstall_phases
         for phase in phases:
-            pkg.__dict__[phase](pkg)
+            phase(pkg)
 
     def list(self, pkg_query):
         pass

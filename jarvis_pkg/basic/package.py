@@ -1,25 +1,82 @@
 from .package_query import PackageQuery
 from jarvis_pkg.util.system_info import SystemInfo
+from jarvis_pkg.util.naming import to_snake_case
+from .jpkg_manifest_manager import JpkgManifestManager
+from .version import Version
 from abc import ABC, abstractmethod
+
+
+def install():
+    def wrap(method):
+        def _jpkg_decor_impl(*args, **kwargs):
+            self = args[0]
+            self.install_phases.append(method)
+        return _jpkg_decor_impl
+    return wrap
+
+
+def uninstall():
+    def wrap(method):
+        def _jpkg_decor_impl(*args, **kwargs):
+            self = args[0]
+            self.install_phases.append(method)
+        return _jpkg_decor_impl
+    return wrap
 
 
 class Package(ABC):
     def __init__(self):
         super().__init__()
-        self.name = None
+        self.manifest = JpkgManifestManager.get_instance()
+        self.name = self._get_name()
         self.cls = None
         self.all_versions = []
         self.all_variants = {}
         self.all_dependencies = []
-        self.phases = []
-        self.variants_ = None
-        self.dependencies_ = None
+        self.install_phases = []
+        self.uninstall_phases = []
+
+        self.variants_ = {}
+        self.dependencies_ = {}
         self.version_ = None
         self.uuid_ = None
         self.is_installed = False
+
         self.define_versions()
         self.define_variants()
         self.define_dependencies()
+
+    def _get_name(self):
+        cls = self.__class__.__name__
+        cls = cls.replace("Package", "")
+        return to_snake_case(cls)
+
+    def classify(self, cls):
+        self.cls = cls
+
+    def version(self, vstring, git=None, url=None, stable=True):
+        self.all_versions.append({
+            'version': Version(vstring),
+            'git': git,
+            'url': url,
+            'stable': stable
+        })
+
+    def variant(self, key, default=None, choices=None, msg=None):
+        self.all_variants[key] = {
+            'choices': choices,
+            'msg': msg
+        }
+        self.variants_[key] = default
+
+    def depends_on(self, cls):
+        # TODO(llogan): verify cls is a class
+        query = PackageQuery(cls=cls)
+        self.all_dependencies.append(query)
+
+    @abstractmethod
+    def define_class(self):
+        pass
 
     @abstractmethod
     def define_versions(self):
@@ -51,22 +108,37 @@ class Package(ABC):
         :return:
         """
         # Solidify version
-        self.all_versions.sort(reverse=True)
+        self.all_versions.sort(reverse=True,
+                               key=lambda x: x['version'])
         for version in self.all_versions:
             if self._version_in_range(version, pkg_query.versions):
                 self.version_ = version
         if self.version_ is None:
             return None
         # Solidify variants
-        self.variants_ = self.all_variants.copy()
         for key, val in pkg_query.variants.items():
-            if key in self.variants_:
+            if self._variant_valid(key, val):
                 self.variants_[key] = val
             else:
                 return None
         # Make uuid
         self.make_uuid()
         return self
+
+    def matches(self, pkg_query):
+        """
+        Check whether or not a package satisfies a query
+
+        :param pkg_query: The query being verified
+        :return:
+        """
+
+
+    def _variant_valid(self, key, val):
+        if key in self.all_variants:
+            if val in self.all_variants[key]['choices']:
+                return True
+        return False
 
     def _version_in_range(self, version, ranges):
         for rng in ranges:

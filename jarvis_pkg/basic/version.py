@@ -1,5 +1,6 @@
 from jarvis_pkg.basic.exception import Error,ErrorCode
 
+
 class Version:
     def __init__(self, version):
         if isinstance(version, str):
@@ -8,6 +9,14 @@ class Version:
         else:
             self.vstring = version.vstring
             self.vtuple = version.vtuple
+
+    @staticmethod
+    def is_version(vstring):
+        try:
+            Version._vstring_to_tuple(vstring)
+            return True
+        except Exception as e:
+            return False
 
     @staticmethod
     def _vstring_to_tuple(vstring):
