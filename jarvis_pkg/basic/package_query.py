@@ -24,6 +24,7 @@ class QueryNode:
 class PackageQuery:
     def __init__(self, text=None):
         self.manifest = JpkgManifestManager.get_instance()
+        self.text = text
         self.repo = None
         self.name = None
         self.cls = None
@@ -107,6 +108,12 @@ class PackageQuery:
         :return:
         """
         return not self.intersect(query).is_null
+
+    def __str__(self):
+        return str(self.text)
+
+    def __repr__(self):
+        return str(self.text)
 
     def _parse_query_text(self, text):
         """

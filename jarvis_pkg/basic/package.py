@@ -64,10 +64,19 @@ class Package(ABC):
             'stable': stable
         })
 
-    def variant(self, key, default=None, choices=None, msg=None):
+    def variant(self, key, default=None, choices=None, vtype=None, msg=None):
+        if vtype is None:
+            if choices is not None:
+                types = set(type(choice) for choice in choices
+                            if not isinstance(choice, type(None)))
+                if len(types) == 1:
+                    vtype = list(types)[0]
+            elif default is not None:
+                vtype = type(default)
         self.all_variants[key] = {
             'choices': choices,
-            'msg': msg
+            'msg': msg,
+            'type': vtype
         }
         self.variants_[key] = default
 
@@ -131,7 +140,7 @@ class Package(ABC):
         # Solidify variants
         for key, val in pkg_query.variants.items():
             if self._variant_valid(key, val):
-                self.variants_[key] = val
+                self.variants_[key] = self._variant_val(key, val)
             else:
                 return None
         # Make uuid
@@ -148,8 +157,15 @@ class Package(ABC):
         self_query = self.to_query()
         return not self_query.intersect(pkg_query).is_null
 
+    def _variant_val(self, key, val):
+        variant_info = self.all_variants[key]
+        if val is not None and variant_info['type'] is not None:
+            val = variant_info['type'](val)
+        return val
+
     def _variant_valid(self, key, val):
         if key in self.all_variants:
+            val = self._variant_val(key, val)
             if val in self.all_variants[key]['choices']:
                 return True
         return False
