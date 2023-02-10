@@ -2,9 +2,9 @@
 from jarvis_pkg.basic.package import Package
 
 
-class DPackage(Package):
+class BPackage(Package):
     def define_class(self):
-        self.classify('D')
+        self.classify('b')
 
     def define_versions(self):
         self.version('3.0.0')
@@ -16,9 +16,7 @@ class DPackage(Package):
         self.variant('b', default=4, choices=[4, 5, 6])
 
     def define_dependencies(self):
-        # NOTE(llogan): Cyclic dependency test
-        self.depends_on('D')
-        self.depends_on('A')
+        pass
 
     def get_dependencies(self, spec):
         return []

@@ -34,9 +34,9 @@ class PackageQuery:
 
         if text is not None:
             self._parse_query_text(text)
-            self.is_null = True
-        else:
             self.is_null = False
+        else:
+            self.is_null = True
 
     def intersect_version_range(self, min, max):
         self.versions.append((min, max))
@@ -85,6 +85,7 @@ class PackageQuery:
             return PackageQuery()
         # Mark as non-null
         new_query.is_null = False
+        return new_query
 
     def _verify_version_range(self):
         """
@@ -92,6 +93,8 @@ class PackageQuery:
 
         :return: True if not empty
         """
+        if len(self.versions) == 0:
+            return True
         min_max = max(self.versions, key=lambda x: x[0])
         max_min = min(self.versions, key=lambda x: x[1])
         return min_max < max_min

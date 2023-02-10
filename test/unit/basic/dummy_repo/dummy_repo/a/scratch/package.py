@@ -1,11 +1,10 @@
 
 from jarvis_pkg.basic.package import Package
-from jarvis_pkg.basic.package_query import PackageQuery
 
 
-class CPackage(Package):
+class APackage(Package):
     def define_class(self):
-        self.classify('C')
+        self.classify('a')
 
     def define_versions(self):
         self.version('3.0.0')
@@ -17,14 +16,7 @@ class CPackage(Package):
         self.variant('b', default=4, choices=[4, 5, 6])
 
     def define_dependencies(self):
-        self.depends_on('A')
-        self.depends_on('B')
+        pass
 
     def get_dependencies(self, spec):
-        deps = []
-        if not spec['A'].matches(PackageQuery("@3.0.0")):
-            deps.append(PackageQuery("@3.0.0"))
-        else:
-            deps.append(PackageQuery("@2.0.0"))
-        deps.append(PackageQuery("B"))
-        return deps
+        return []

@@ -12,21 +12,21 @@ repo_dir = os.path.join(test_dir, repo_name)
 manifest.add_repo(repo_dir)
 rows = manifest.list_repo(repo_name)
 for repo, cls, name, installer in rows:
-    if name == 'A':
+    if name == 'a':
         assert(repo == repo_name)
-        assert(cls == 'A')
-    elif name == 'B':
+        assert(cls == 'a')
+    elif name == 'b':
         assert(repo == repo_name)
-        assert(cls == 'B')
-    elif name == 'C':
+        assert(cls == 'b')
+    elif name == 'c':
         assert(repo == repo_name)
-        assert(cls == 'C')
-    elif name == 'D':
+        assert(cls == 'c')
+    elif name == 'd':
         assert(repo == repo_name)
-        assert(cls == 'D')
+        assert(cls == 'd')
     else:
         raise Exception("Didn't list repo fully")
 manifest.print_repo(repo_name)
-query = PackageQuery("A")
-assert(query.cls == 'A')
+query = PackageQuery("a")
+assert(query.cls == 'a')
 manifest.rm_repo(repo_name)

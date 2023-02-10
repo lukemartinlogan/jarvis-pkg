@@ -6,7 +6,7 @@ user's query.
 2.
 
 Solidify root package
-- Which version of A will be installed
+- Which version of a will be installed
 - Check if a package matching this query is already installed?
 - If not, select the latest version
 Solidify next-level packages
@@ -85,12 +85,12 @@ class PackageSpec:
 
         :return: None
         """
-        for cls in self.install_order:
+        for cls, order in self.install_order:
             pkg_query = self.smash_class_row(cls)
             pkg = self.installed.solidify(pkg_query)
-            if pkg.is_null:
+            if pkg is None:
                 pkg = self.manifest.solidify(pkg_query)
-            if pkg.is_null:
+            if pkg is None:
                 raise Exception(f"Couldn't resolve query: {pkg_query}")
             self.spec[cls] = pkg
             dep_queries = pkg.get_dependencies(self.spec)
@@ -105,5 +105,5 @@ class PackageSpec:
         :return:
         """
         self.install_order.sort(key=lambda x: x[1], reverse=True)
-        for cls in self.install_order:
+        for cls, order in self.install_order:
             self.install_graph.append(self.spec[cls])

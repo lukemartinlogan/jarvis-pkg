@@ -33,7 +33,7 @@ class JpkgManifestManager:
     def add_repo(self, repo_path):
         """
         Add the repo rooted at path.
-        A repo has the following structure:
+        a repo has the following structure:
             /path/to/repo_name/repo_name/pkg_name/installer_name/package.py
 
         :param path: root of the repo

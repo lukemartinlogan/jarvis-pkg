@@ -10,6 +10,7 @@ case of failure
 import os, sys
 import pathlib
 import pandas as pd
+from .jpkg_manager import JpkgManager
 from jarvis_pkg.util.system_info import SystemInfo
 
 
@@ -29,7 +30,7 @@ class JpkgInstallManager:
             'sysinfo', 'uuid', 'ref', 'pkg'
         ]
         self.df = pd.DataFrame(columns=self.columns)
-        self.jpkg = JpkgInstallManager.get_instance()
+        self.jpkg = JpkgManager.get_instance()
         if os.path.exists(self.jpkg.installed_path):
             self.df = pd.load_parquet(self.jpkg.installed_path)
 

@@ -14,7 +14,7 @@ manifest.yaml
 repos.yaml
 install.yaml
 
-# C extensions
+# c extensions
 *.so
 
 # Distribution / packaging

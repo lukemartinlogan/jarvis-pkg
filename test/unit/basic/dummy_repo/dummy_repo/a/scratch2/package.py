@@ -4,7 +4,7 @@ from jarvis_pkg.basic.package import Package
 
 class APackage(Package):
     def define_class(self):
-        self.classify('A')
+        self.classify('a')
 
     def define_versions(self):
         self.version('3.1.0')

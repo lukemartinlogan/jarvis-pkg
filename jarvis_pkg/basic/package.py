@@ -123,7 +123,7 @@ class Package(ABC):
                                key=lambda x: x['version'])
         for version in self.all_versions:
             if self._version_in_range(version, pkg_query.versions):
-                self.version_ = version
+                self.version_ = version['version']
         if self.version_ is None:
             return None
         # Solidify variants
@@ -161,7 +161,7 @@ class Package(ABC):
     def make_uuid(self):
         variants = hash(str(self.variants_))
         version = hash(self.version_)
-        dependencies = hash(self.dependencies_)
+        dependencies = hash(str(self.dependencies_))
         sysinfo = hash(SystemInfo.get_instance())
         self.uuid_ = hash(variants ^ version ^ dependencies ^ sysinfo)
         return self
