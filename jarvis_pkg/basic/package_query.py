@@ -82,7 +82,7 @@ class PackageQuery:
                     new_query.dependencies[key] = isect
         # Versions
         new_query.versions += other.versions
-        if not self._verify_version_range():
+        if not new_query._verify_version_range():
             return PackageQuery()
         # Mark as non-null
         new_query.is_null = False
@@ -98,7 +98,7 @@ class PackageQuery:
             return True
         min_max = max(self.versions, key=lambda x: x[0])
         max_min = min(self.versions, key=lambda x: x[1])
-        return min_max < max_min
+        return min_max <= max_min
 
     def matches(self, query):
         """
