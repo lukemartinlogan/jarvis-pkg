@@ -81,10 +81,28 @@ class PackageQuery:
                     new_query.dependencies[key] = isect
         # Versions
         new_query.versions += other.versions
+        if not self._verify_version_range():
+            return PackageQuery()
         # Mark as non-null
         new_query.is_null = False
 
+    def _verify_version_range(self):
+        """
+        Check whether the version range is empty set
+
+        :return: True if not empty
+        """
+        min_max = max(self.versions, key=lambda x: x[0])
+        max_min = min(self.versions, key=lambda x: x[1])
+        return min_max < max_min
+
     def matches(self, query):
+        """
+        Check whether or not two queries are intersectable
+
+        :param query:
+        :return:
+        """
         return not self.intersect(query).is_null
 
     def _parse_query_text(self, text):

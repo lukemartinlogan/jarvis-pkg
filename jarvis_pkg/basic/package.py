@@ -102,6 +102,15 @@ class Package(ABC):
         """
         pass
 
+    def to_query(self):
+        query = PackageQuery()
+        query.name = self.name
+        query.cls = self.cls
+        query.intersect_version_range(self.version_, self.version_)
+        query.variants = self.variants_.copy()
+        query.is_null = False
+        return query
+
     def from_query(self, pkg_query):
         """
         Select package version and variants based on pkg_query
@@ -134,7 +143,8 @@ class Package(ABC):
         :param pkg_query: The query being verified
         :return:
         """
-
+        self_query = self.to_query()
+        return not self_query.intersect(pkg_query).is_null
 
     def _variant_valid(self, key, val):
         if key in self.all_variants:
