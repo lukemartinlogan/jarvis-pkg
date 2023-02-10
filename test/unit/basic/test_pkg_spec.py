@@ -20,10 +20,10 @@ def test2():
 
 
 def test3():
-    spec = PackageSpec(PackageQuery("a@1.1.0"))
+    spec = PackageSpec(PackageQuery("a@1.1.0:3.0.0"))
     pkg = spec.install_graph[0]
     assert(pkg.name == 'a')
-    assert(pkg.version_ == Version("1.1.0"))
+    assert(pkg.version_ == Version("3.0.0"))
 
 repo_name = 'dummy_repo'
 manifest = JpkgManifestManager.get_instance()
@@ -31,4 +31,4 @@ test_dir = pathlib.Path(__file__).parent.resolve()
 repo_dir = os.path.join(test_dir, repo_name)
 manifest.add_repo(repo_dir)
 
-test2()
+test3()
