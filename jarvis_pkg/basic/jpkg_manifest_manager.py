@@ -171,6 +171,23 @@ class JpkgManifestManager:
                 matches.append(solid_pkg)
         return matches
 
+    def get_class(self, name_or_cls):
+        """
+        Determines whether a string is a package name or class
+
+        :param name_or_cls: the text to check
+        :return: True or false
+        """
+        if name_or_cls in self.repos['cls']:
+            return name_or_cls
+        else:
+            df = self.repos
+            df = df[df.name == name_or_cls]
+            if len(df) == 0:
+                raise Exception(f"Couldn't find package with name: "
+                                f"{name_or_cls}")
+            return list(df['cls'])[0]
+
     def solidify(self, pkg_query):
         """
         Any package which matches the query

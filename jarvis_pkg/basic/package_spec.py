@@ -25,7 +25,6 @@ class PackageSpec:
 
         :param pkg_query: the primary package to install
         """
-
         self.manifest = JpkgManifestManager.get_instance()
         self.installed = JpkgInstallManager.get_instance()
         self.install_order = {}
@@ -50,7 +49,6 @@ class PackageSpec:
         :param cur_env: the current set of dependencies
         :return:
         """
-
         pkgs = self.manifest.match(pkg_query)
         if len(pkgs) == 0:
             raise Exception(f"Couldn't resolve query: {pkg_query}")
@@ -72,7 +70,7 @@ class PackageSpec:
         :return:
         """
         row = self.class_queries[cls]
-        query = PackageQuery(cls=cls)
+        query = PackageQuery(cls)
         for pkg_query in row:
             new_query = query.intersect(pkg_query)
             if new_query.is_null:
@@ -87,7 +85,6 @@ class PackageSpec:
 
         :return: None
         """
-
         for cls in self.install_order:
             pkg_query = self.smash_class_row(cls)
             pkg = self.installed.solidify(pkg_query)

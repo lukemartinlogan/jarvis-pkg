@@ -22,7 +22,8 @@ class JpkgManager:
     def __init__(self):
         self.jpkg_root = pathlib.Path(__file__).parent.parent.parent.resolve()
         self.jpkg_state_dir = os.path.join(self.jpkg_root, '.jpkg_state')
-        os.mkdir(self.jpkg_state_dir)
+        if not os.path.exists(self.jpkg_state_dir):
+            os.mkdir(self.jpkg_state_dir)
         self.manifest_path = os.path.join(self.jpkg_state_dir,
                                           'manifest.parquet')
         self.installed_path = os.path.join(self.jpkg_state_dir,

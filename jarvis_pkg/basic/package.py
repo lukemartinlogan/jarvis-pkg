@@ -71,7 +71,7 @@ class Package(ABC):
 
     def depends_on(self, cls):
         # TODO(llogan): verify cls is a class
-        query = PackageQuery(cls=cls)
+        query = PackageQuery(cls)
         self.all_dependencies.append(query)
 
     @abstractmethod
