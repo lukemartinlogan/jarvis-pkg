@@ -122,6 +122,8 @@ class JpkgInstallManager:
         """
         matches = self.match(pkg_query)
         if len(matches):
+            matches.sort(key=lambda x: x.version_,
+                         reverse=True)
             return matches[0]
         else:
             return None
