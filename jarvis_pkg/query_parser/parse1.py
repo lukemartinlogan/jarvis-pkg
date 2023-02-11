@@ -15,6 +15,7 @@ from .parse_tree import ParseTree
 class QueryParser1(ParseTree):
     def __init__(self, tree):
         self.root_node = tree.root_node
+        self.hidden = tree.hidden
 
     def parse(self):
         self._parse(self.root_node)
@@ -44,15 +45,22 @@ class QueryParser1(ParseTree):
 
     def _parse_grouping(self, root_node, i):
         i0 = i
-        new_query = QueryNode(QueryTok.ROOT)
+        new_query = QueryNode(QueryTok.GROUPING)
         node = root_node[i]
         if node.type == QueryTok.PAREN_LEFT:
-            i = self._parse(root_node, i+1, term=QueryTok.PAREN_RIGHT)
-        if node.type == QueryTok.BRACE_LEFT:
-            i = self._parse(root_node, i+1, term=QueryTok.BRACE_RIGHT)
-        if node.type == QueryTok.BRACKET_LEFT:
-            i = self._parse(root_node, i+1, term=QueryTok.BRACKET_RIGHT)
-        return root_node.group_nodes(new_query, i0, i)
+            term = QueryTok.PAREN_RIGHT
+        elif node.type == QueryTok.BRACE_LEFT:
+            term = QueryTok.BRACE_LEFT
+        elif node.type == QueryTok.BRACKET_LEFT:
+            term = QueryTok.BRACKET_RIGHT
+        else:
+            raise Exception("Invalid grouping")
+        i = self._parse(root_node, i+1, term=term)
+        if not self.check_pattern(root_node, i, term):
+            raise Exception("Unterminated grouping")
+        self.hide(root_node, i)
+        self.hide(root_node, i0)
+        return root_node.group_nodes(new_query, i0, i - 2)
 
     def _is_variant(self, root_node, i):
         if self.check_pattern(root_node, i, QueryTok.PLUS, QueryTok.TEXT):

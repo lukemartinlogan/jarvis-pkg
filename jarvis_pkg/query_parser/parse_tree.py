@@ -10,3 +10,7 @@ class ParseTree:
                 return False
             i += 1
         return True
+
+    def hide(self, root_node, i):
+        x = root_node.pop(i)
+        self.hidden.add_node(x)

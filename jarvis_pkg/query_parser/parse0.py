@@ -28,7 +28,7 @@ class QueryParser0:
         i = 0
         off = 0
         self.is_null = False
-        toks = re.split('([\^%@\:\+\-=])|(\s+)', query_text)
+        toks = re.split('([\(\)\{\}\[\]\^%@\:\+\-=])|(\s+)', query_text)
         toks = [tok for tok in toks if tok is not None and len(tok) != 0]
         while i < len(toks):
             tok = toks[i]

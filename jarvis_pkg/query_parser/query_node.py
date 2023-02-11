@@ -20,7 +20,9 @@ class QueryTok(Enum):
     BRACE_LEFT = 'BRACE_LEFT'
     BRACE_RIGHT = 'BRACE_RIGHT'
 
-    VARIANT = "VARIANT"
+    VARIANT = 'VARIANT'
+    QUERY = 'QUERY'
+    GROUPING = 'GROUPING'
 
 class QueryNode:
     def __init__(self, node_type, tok=None, off=0):
@@ -36,6 +38,13 @@ class QueryNode:
         node.children = self.children[i0:i+1]
         self.children = self.children[:i0] + [node] + self.children[i+1:]
         return i0 + 1
+
+    def cut(self, i):
+        self.children = self.children[:i] + self.children[i].children + \
+                        self.children[i+1:]
+
+    def pop(self, i):
+        return self.children.pop(i)
 
     def __getitem__(self, i):
         return self.children[i]
