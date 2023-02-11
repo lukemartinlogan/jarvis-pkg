@@ -4,9 +4,8 @@ import copy
 
 
 class PackageQuery:
-    def __init__(self, text=None):
+    def __init__(self):
         self.manifest = JpkgManifestManager.get_instance()
-        self.text = text
         self.repo = None
         self.name = None
         self.cls = None
@@ -14,12 +13,6 @@ class PackageQuery:
         self.versions = []      # a list of Version ranges
         self.dependencies = {}  # a dict of PackageQuery
         self.is_null = True
-
-        if text is not None:
-            self._parse_query_text(text)
-            self.is_null = False
-        else:
-            self.is_null = True
 
     def intersect_version_range(self, min, max):
         self.versions.append((min, max))
@@ -92,7 +85,10 @@ class PackageQuery:
         return not self.intersect(query).is_null
 
     def __str__(self):
-        return str(self.text)
+        return self.to_string()
 
     def __repr__(self):
-        return str(self.text)
+        return self.to_string()
+
+    def to_string(self):
+        return f"{self.repo}.{self.cls}.{self.name}"

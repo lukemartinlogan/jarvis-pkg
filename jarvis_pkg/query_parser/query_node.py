@@ -35,6 +35,7 @@ class QueryNode:
     def group_nodes(self, node, i0, i):
         node.children = self.children[i0:i+1]
         self.children = self.children[:i0] + [node] + self.children[i+1:]
+        return i0 + 1
 
     def __getitem__(self, i):
         return self.children[i]

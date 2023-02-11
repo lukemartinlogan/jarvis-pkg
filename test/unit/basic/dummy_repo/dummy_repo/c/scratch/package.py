@@ -22,9 +22,9 @@ class CPackage(Package):
 
     def get_dependencies(self, spec):
         deps = []
-        if spec['c'].matches(PackageQuery("@3.0.0")):
-            deps.append(PackageQuery("a@3.0.0"))
+        if spec['c'].matches("@3.0.0"):
+            deps.append("a@3.0.0")
         else:
-            deps.append(PackageQuery("a@2.0.0"))
-        deps.append(PackageQuery("b"))
+            deps.append("a@2.0.0")
+        deps.append("b")
         return deps
