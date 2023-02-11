@@ -62,22 +62,25 @@ class QueryParser1(ParseTree):
         elif self.check_pattern(root_node, i,
                                 QueryTok.TEXT, QueryTok.EQUALS, QueryTok.TEXT):
             return True
+        elif self.check_pattern(root_node, i,
+                                QueryTok.TEXT, QueryTok.EQUALS,
+                                QueryTok.VERSION):
+            return True
         return False
 
     def _parse_variant(self, root_node, i):
         if self.check_pattern(root_node, i, QueryTok.PLUS, QueryTok.TEXT):
             node = QueryNode(QueryTok.VARIANT)
-            node.variant_key = root_node[i + 1]
+            node.variant_key = root_node[i + 1].tok
             node.variant_val = True
             return root_node.group_nodes(node, i, i + 1)
         elif self.check_pattern(root_node, i, QueryTok.MINUS, QueryTok.TEXT):
             node = QueryNode(QueryTok.VARIANT)
-            node.variant_key = root_node[i + 1]
+            node.variant_key = root_node[i + 1].tok
             node.variant_val = False
             return root_node.group_nodes(node, i, i + 1)
-        elif self.check_pattern(root_node, i,
-                                QueryTok.TEXT, QueryTok.EQUALS, QueryTok.TEXT):
+        else:
             node = QueryNode(QueryTok.VARIANT)
-            node.variant_key = root_node[i]
-            node.variant_val = root_node[i + 2]
+            node.variant_key = root_node[i].tok
+            node.variant_val = root_node[i + 2].tok
             return root_node.group_nodes(node, i, i + 2)

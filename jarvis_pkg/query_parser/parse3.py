@@ -121,5 +121,5 @@ class QueryParser3(ParseTree):
 
     def _parse_variant(self, root_node, i, pkg_query):
         vnode = root_node[i]
-        pkg_query[vnode.variant_key] = vnode.variant_val
+        pkg_query.variants[vnode.variant_key] = vnode.variant_val
         return i + 1
