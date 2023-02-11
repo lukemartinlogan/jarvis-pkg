@@ -11,8 +11,11 @@ from .parse3 import QueryParser3
 
 class QueryParser:
     def __init__(self, text):
-        q0 = QueryParser0(text)
-        q1 = QueryParser1(q0)
-        q2 = QueryParser2(q1)
-        q3 = QueryParser3(q2)
+        q0 = QueryParser0(text).lex()
+        q1 = QueryParser1(q0).parse()
+        q2 = QueryParser2(q1).parse()
+        q3 = QueryParser3(q2).parse()
         self.queries = q3.queries
+
+    def first(self):
+        return self.queries[0]

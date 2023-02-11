@@ -1,16 +1,17 @@
 from jarvis_pkg.basic.package_query import PackageQuery
+from jarvis_pkg.query_parser.parse import QueryParser
 from jarvis_pkg.basic.version import Version
 
 
 def test1():
-    q1 = PackageQuery("a.b.hello")
+    q1 = QueryParser("a.b.hello").first()
     assert(q1.repo == "a")
     assert(q1.cls == "b")
     assert(q1.name == "hello")
 
 
 def test2():
-    q2 = PackageQuery("a.b.hello@1.0.0")
+    q2 = QueryParser("a.b.hello@1.0.0").first()
     assert(q2.repo == "a")
     assert(q2.cls == "b")
     assert(q2.name == "hello")
@@ -19,7 +20,7 @@ def test2():
 
 
 def test3():
-    q3 = PackageQuery("a.b.hello@1.0.0:")
+    q3 = QueryParser("a.b.hello@1.0.0:").first()
     assert(q3.repo == "a")
     assert(q3.cls == "b")
     assert(q3.name == "hello")
@@ -28,7 +29,7 @@ def test3():
 
 
 def test4():
-    q4 = PackageQuery("a.b.hello@:1.0.0")
+    q4 = QueryParser("a.b.hello@:1.0.0").first()
     assert(q4.repo == "a")
     assert(q4.cls == "b")
     assert(q4.name == "hello")
@@ -37,7 +38,7 @@ def test4():
 
 
 def test5():
-    q5 = PackageQuery("a.b.hello@1.0.0:2.0.0")
+    q5 = QueryParser("a.b.hello@1.0.0:2.0.0").first()
     assert(q5.repo == "a")
     assert(q5.cls == "b")
     assert(q5.name == "hello")
@@ -46,7 +47,7 @@ def test5():
 
 
 def test6():
-    q6 = PackageQuery("a.b.hello@1.0.0:2.0.0 +hi")
+    q6 = QueryParser("a.b.hello@1.0.0:2.0.0 +hi").first()
     assert(q6.repo == "a")
     assert(q6.cls == "b")
     assert(q6.name == "hello")
@@ -56,7 +57,7 @@ def test6():
 
 
 def test7():
-    q7 = PackageQuery("a.b.hello@1.0.0:2.0.0 -hi")
+    q7 = QueryParser("a.b.hello@1.0.0:2.0.0 -hi").first()
     assert(q7.repo == "a")
     assert(q7.cls == "b")
     assert(q7.name == "hello")
@@ -66,7 +67,7 @@ def test7():
 
 
 def test8():
-    q8 = PackageQuery("a.b.hello@1.0.0:2.0.0 hi=123")
+    q8 = QueryParser("a.b.hello@1.0.0:2.0.0 hi=123").first()
     assert(q8.repo == "a")
     assert(q8.cls == "b")
     assert(q8.name == "hello")
@@ -76,7 +77,7 @@ def test8():
 
 
 def test9():
-    q9 = PackageQuery("a.b.hello@1.0.0:2.0.0 hi=123 % a.h2.hello2@1.0.0:2.0.0 +hi2")
+    q9 = QueryParser("a.b.hello@1.0.0:2.0.0 hi=123 % a.h2.hello2@1.0.0:2.0.0 +hi2").first()
     assert(q9.repo == "a")
     assert(q9.cls == "b")
     assert(q9.name == "hello")
@@ -93,7 +94,7 @@ def test9():
     assert(q10.variants['hi2'] == True)
 
 def test10():
-    q = PackageQuery("@1.0.2 +hi")
+    q = QueryParser("@1.0.2 +hi").first()
     assert(q.repo == None)
     assert(q.cls == None)
     assert(q.name == None)
@@ -103,20 +104,20 @@ def test10():
 def test11():
     failed = False
     try:
-        q = PackageQuery("hi=")
+        q = QueryParser("hi=")
     except Exception as e:
         failed = True
     assert(failed)
 
-test1()
+# test1()
 test2()
-test3()
-test4()
-test5()
-test6()
-test7()
-test8()
-test9()
-test10()
-test11()
+# test3()
+# test4()
+# test5()
+# test6()
+# test7()
+# test8()
+# test9()
+# test10()
+# test11()
 

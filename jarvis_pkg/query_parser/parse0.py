@@ -14,7 +14,11 @@ class QueryParser0:
         self.hidden = QueryNode(QueryTok.ROOT)
         self.root_node = QueryNode(QueryTok.ROOT)
 
-    def lex(self, query_text):
+    def lex(self):
+        self._lex(self.text)
+        return self
+
+    def _lex(self, query_text):
         """
         Divides the query text into tokens.
 

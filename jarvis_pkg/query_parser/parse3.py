@@ -16,6 +16,7 @@ class QueryParser3(ParseTree):
 
     def parse(self):
         self._parse(self.root_node)
+        return self
 
     def _parse(self, root_node, pkg_query=None):
         i = 0
@@ -27,33 +28,36 @@ class QueryParser3(ParseTree):
                     query = PackageQuery()
                     self.queries.append(query)
                     self._parse(root_node[i], query)
+                    i += 1
                 else:
                     raise Exception("Package query followed was not "
                                     "preceeded by %")
             elif root_node[i].type == QueryTok.AT:
-                self._parse_version_range(root_node, i, pkg_query)
+                i = self._parse_version_range(root_node, i, pkg_query)
             elif root_node[i].type == QueryTok.MODULO:
-                self._parse_dependency(root_node, i, pkg_query)
+                i = self._parse_dependency(root_node, i, pkg_query)
             elif root_node[i].type == QueryTok.VARIANT:
-                self._parse_variant(root_node, i, pkg_query)
+                i = self._parse_variant(root_node, i, pkg_query)
             else:
-                raise
+                raise Exception(f"Unidentified token: {root_node[i].type}")
 
     def _parse_name(self, root_node, i, pkg_query):
-        name_toks = root_node.tok.split('.')
+        if root_node[i].type != QueryTok.TEXT:
+            return i
+        name_toks = root_node[i].tok.split('.')
         if len(name_toks) == 3:
             # [NAME].[NAME].[NAME]
             pkg_query.repo = name_toks[0]
-            pkg_query.name = name_toks[1]
-            pkg_query.cls = name_toks[2]
-            return i + 3
-        if len(name_toks) == 2:
+            pkg_query.cls = name_toks[1]
+            pkg_query.name = name_toks[2]
+            return i + 1
+        elif len(name_toks) == 2:
             # [NAME].[NAME]
-            pkg_query.name = name_toks[0]
+            pkg_query.repo = name_toks[0]
             pkg_query.cls = self.manifest.get_class(name_toks[1])
             if pkg_query.cls != name_toks[1]:
                 pkg_query.name = name_toks[1]
-            return i + 2
+            return i + 1
         elif len(name_toks) == 1:
             # [NAME]
             pkg_query.cls = self.manifest.get_class(name_toks[0])
@@ -63,6 +67,7 @@ class QueryParser3(ParseTree):
         return i
 
     def _parse_version_range(self, root_node, i, pkg_query):
+        i += 1
         if self.check_pattern(root_node, i,
                               QueryTok.VERSION, QueryTok.COLON,
                               QueryTok.VERSION):
@@ -70,7 +75,7 @@ class QueryParser3(ParseTree):
             vmin = Version(root_node[i].tok)
             vmax = Version(root_node[i+2].tok)
             pkg_query.intersect_version_range(vmin, vmax)
-            return i + 2
+            return i + 3
         elif self.check_pattern(root_node, i,
                                 QueryTok.COLON,
                                 QueryTok.VERSION):
@@ -101,6 +106,8 @@ class QueryParser3(ParseTree):
             vmax = Version(root_node[i].tok)
             pkg_query.intersect_version_range(vmin, vmax)
             return i + 1
+        else:
+            raise Exception("Invalid version range")
 
     def _parse_dependency(self, root_node, i, pkg_query):
         if self.check_pattern(root_node, i,
@@ -115,3 +122,4 @@ class QueryParser3(ParseTree):
     def _parse_variant(self, root_node, i, pkg_query):
         vnode = root_node[i]
         pkg_query[vnode.variant_key] = vnode.variant_val
+        return i + 1

@@ -12,6 +12,7 @@ class QueryParser2(ParseTree):
 
     def parse(self):
         self._parse(self.root_node)
+        return self
 
     def _parse(self, root_node):
         i = 0
@@ -33,6 +34,6 @@ class QueryParser2(ParseTree):
                 i += 1
             else:
                 i += 1
-        if i0 != i - 1:
+        if root_node[i0].type != QueryTok.ROOT:
             node = QueryNode(QueryTok.ROOT)
             root_node.group_nodes(node, i0, i - 1)

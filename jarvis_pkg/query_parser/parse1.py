@@ -18,6 +18,7 @@ class QueryParser1(ParseTree):
 
     def parse(self):
         self._parse(self.root_node)
+        return self
 
     def _parse(self, root_node, i=0, term=None):
         while i < len(root_node):
