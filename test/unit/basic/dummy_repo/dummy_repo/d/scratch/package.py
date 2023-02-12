@@ -32,9 +32,9 @@ class DPackage(Package):
         print(f"In {self.name} phase 2")
 
     @uninstall
-    def uphase1(self, spec):
+    def uphase1(self):
         print(f"In {self.name} uphase 1")
 
     @uninstall
-    def uphase2(self, spec):
+    def uphase2(self):
         print(f"In {self.name} uphase 2")

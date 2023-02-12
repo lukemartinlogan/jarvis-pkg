@@ -28,3 +28,6 @@ class JpkgManager:
                                           'manifest.parquet')
         self.installed_path = os.path.join(self.jpkg_state_dir,
                                            'installed.parquet')
+        self.pkg_dir = os.path.join(self.jpkg_state_dir, 'pkgs')
+        if not os.path.exists(self.pkg_dir):
+            os.mkdir(self.pkg_dir)

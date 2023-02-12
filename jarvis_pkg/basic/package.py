@@ -3,8 +3,10 @@ from jarvis_pkg.query_parser.parse import QueryParser
 from jarvis_pkg.util.system_info import SystemInfo
 from jarvis_pkg.util.naming import to_snake_case
 from .jpkg_manifest_manager import JpkgManifestManager
+from .jpkg_manager import JpkgManager
 from .version import Version
 from abc import ABC, abstractmethod
+import inspect, pathlib, os
 
 
 def install(method):
@@ -22,7 +24,9 @@ def uninstall(method):
 class Package(ABC):
     def __init__(self, do_full_load):
         super().__init__()
+        self.jpkg = JpkgManager.get_instance()
         self.manifest = JpkgManifestManager.get_instance()
+        self.repo = self._get_repo()
         self.name = self._get_name()
         self.cls = None
         self.all_versions = []
@@ -36,6 +40,7 @@ class Package(ABC):
         self.version_ = None
         self.uuid_ = None
         self.is_installed = False
+        self.install_path = None
 
         self._parse_decorators()
         self.define_class()
@@ -52,6 +57,12 @@ class Package(ABC):
                         self.install_phases.append(value)
                     if value.__name__ == '_uninstall_impl':
                         self.uninstall_phases.append(value)
+
+    def _get_repo(self):
+        filepath = inspect.getfile(self.__class__)
+        repo_path = pathlib.Path(filepath).parent.parent.parent.resolve()
+        repo = os.path.basename(repo_path)
+        return repo
 
     def _get_name(self):
         name = self.__class__.__name__
@@ -150,8 +161,6 @@ class Package(ABC):
                 self.variants_[key] = self._variant_val(key, val)
             else:
                 return None
-        # Make uuid
-        self.make_uuid()
         return self
 
     def matches(self, pkg_query):
@@ -185,10 +194,17 @@ class Package(ABC):
                 return False
         return True
 
-    def make_uuid(self):
-        variants = hash(str(self.variants_))
-        version = hash(self.version_)
-        dependencies = hash(str(self.dependencies_))
-        sysinfo = hash(SystemInfo.get_instance())
-        self.uuid_ = hash(variants ^ version ^ dependencies ^ sysinfo)
+    def make_uuid(self, cur_uuids):
+        nonce = 0
+        while self.uuid_ is None:
+            variants = hash(str(self.variants_))
+            version = hash(self.version_) * nonce
+            dependencies = hash(str(self.dependencies_))
+            sysinfo = hash(SystemInfo.get_instance())
+            uuid = abs(hash(variants ^ version ^ dependencies ^ sysinfo))
+            nonce += 1
+            if uuid not in cur_uuids:
+                self.uuid_ = uuid
+        self.install_path = os.path.join(self.jpkg.pkg_dir,
+                                         f"{self.name}-{self.uuid_}")
         return self
