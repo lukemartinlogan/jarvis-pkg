@@ -1,4 +1,5 @@
 from .package_query import PackageQuery
+from jarvis_pkg.query_parser.parse import QueryParser
 from jarvis_pkg.util.system_info import SystemInfo
 from jarvis_pkg.util.naming import to_snake_case
 from .jpkg_manifest_manager import JpkgManifestManager
@@ -81,8 +82,10 @@ class Package(ABC):
         self.variants_[key] = default
 
     def depends_on(self, cls):
-        # TODO(llogan): verify cls is a class
         query = PackageQuery(cls)
+        if query.cls is None:
+            raise Exception(f"{cls} is not a class or package name")
+        query.is_null = False
         self.all_dependencies.append(query)
 
     @abstractmethod
@@ -154,6 +157,8 @@ class Package(ABC):
         :param pkg_query: The query being verified
         :return:
         """
+        if isinstance(pkg_query, str):
+            pkg_query = QueryParser(pkg_query).first()
         self_query = self.to_query()
         return not self_query.intersect(pkg_query).is_null
 

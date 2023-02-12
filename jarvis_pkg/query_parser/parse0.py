@@ -1,8 +1,6 @@
 """
 This will divide the file into tokens and produce an initial labeling.
 """
-
-from jarvis_pkg.basic.package import PackageQuery
 from jarvis_pkg.basic.version import Version
 from .query_node import QueryNode, QueryTok
 import re

@@ -1,5 +1,6 @@
 
 from jarvis_pkg.basic.package import Package
+from jarvis_pkg.basic.package_query_list import PackageQueryList
 
 
 class BPackage(Package):
@@ -19,4 +20,4 @@ class BPackage(Package):
         pass
 
     def get_dependencies(self, spec):
-        return []
+        return PackageQueryList()

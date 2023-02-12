@@ -1,11 +1,11 @@
 """
 Create the actual PackageQuery structures
 """
-from jarvis_pkg.basic.package import PackageQuery
+from jarvis_pkg.basic.package_query import PackageQuery
 from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
 from jarvis_pkg.basic.version import Version
 from .parse_tree import ParseTree
-from .query_node import QueryNode, QueryTok
+from .query_node import QueryTok
 
 
 class QueryParser3(ParseTree):
@@ -67,10 +67,9 @@ class QueryParser3(ParseTree):
             return i + 1
         elif len(name_toks) == 2:
             # [NAME].[NAME]
-            pkg_query.repo = name_toks[0]
-            pkg_query.cls = self.manifest.get_class(name_toks[1])
-            if pkg_query.cls != name_toks[1]:
-                pkg_query.name = name_toks[1]
+            pkg_query.repo = None
+            pkg_query.cls = name_toks[0]
+            pkg_query.name = name_toks[1]
             return i + 1
         elif len(name_toks) == 1:
             # [NAME]

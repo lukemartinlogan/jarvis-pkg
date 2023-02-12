@@ -4,11 +4,26 @@ import copy
 
 
 class PackageQuery:
-    def __init__(self):
+    def __init__(self, text=None):
         self.manifest = JpkgManifestManager.get_instance()
         self.repo = None
         self.name = None
         self.cls = None
+        if text is not None and len(text):
+            toks = text.split('.')
+            if len(toks) == 1:
+                self.cls = self.manifest.get_class(text)
+                if self.cls != text:
+                    self.name = text
+            elif len(toks) == 2:
+                self.cls = toks[0]
+                self.name = toks[1]
+            elif len(toks) == 3:
+                self.repo = toks[0]
+                self.cls = toks[1]
+                self.name = toks[2]
+            else:
+                raise Exception("Invalid text to package query")
         self.variants = {}      # a dict of keys -> variant options
         self.versions = []      # a list of Version ranges
         self.dependencies = {}  # a dict of PackageQuery

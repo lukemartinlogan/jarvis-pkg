@@ -5,9 +5,6 @@ This will parse the following:
 
 [TEXT]@[VERSION]:[VERSION]%[TEXT]
 """
-
-from jarvis_pkg.basic.package import PackageQuery
-from jarvis_pkg.basic.version import Version
 from .query_node import QueryNode, QueryTok
 from .parse_tree import ParseTree
 

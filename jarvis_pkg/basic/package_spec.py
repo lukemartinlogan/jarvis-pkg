@@ -12,6 +12,7 @@ Solidify root package
 Solidify next-level packages
 
 """
+from jarvis_pkg.query_parser.parse import QueryParser
 from .jpkg_manifest_manager import JpkgManifestManager
 from .jpkg_install_manager import JpkgInstallManager
 from .package_query import PackageQuery
@@ -25,6 +26,8 @@ class PackageSpec:
 
         :param pkg_query: the primary package to install
         """
+        if isinstance(pkg_query, str):
+            pkg_query = QueryParser(pkg_query).first()
         self.manifest = JpkgManifestManager.get_instance()
         self.installed = JpkgInstallManager.get_instance()
         self.install_order = {}
@@ -86,7 +89,7 @@ class PackageSpec:
             if pkg is None:
                 raise Exception(f"Couldn't resolve query: {pkg_query}")
             self.spec[cls] = pkg
-            dep_queries = pkg.get_dependencies(self.spec)
+            dep_queries = pkg.get_dependencies(self.spec).to_list()
             for dep_query in dep_queries:
                 self.class_queries[dep_query.cls].append(dep_query)
 

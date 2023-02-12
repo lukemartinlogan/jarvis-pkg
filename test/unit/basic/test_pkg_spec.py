@@ -6,28 +6,28 @@ import os, pathlib
 
 
 def test1():
-    spec = PackageSpec(PackageQuery("a"))
+    spec = PackageSpec("a")
     pkg = spec.install_graph[0]
     assert(pkg.name == 'a')
     assert(pkg.version_ == Version("3.1.0"))
 
 
 def test2():
-    spec = PackageSpec(PackageQuery("a@1.1.0"))
+    spec = PackageSpec("a@1.1.0")
     pkg = spec.install_graph[0]
     assert(pkg.name == 'a')
     assert(pkg.version_ == Version("1.1.0"))
 
 
 def test3():
-    spec = PackageSpec(PackageQuery("a@1.1.0:3.0.0"))
+    spec = PackageSpec("a@1.1.0:3.0.0")
     pkg = spec.install_graph[0]
     assert(pkg.name == 'a')
     assert(pkg.version_ == Version("3.0.0"))
 
 
 def test4():
-    spec = PackageSpec(PackageQuery("a@1.1.0:3.0.0 a=3"))
+    spec = PackageSpec("a@1.1.0:3.0.0 a=3")
     pkg = spec.install_graph[0]
     assert(pkg.name == 'a')
     assert(pkg.version_ == Version("3.0.0"))
@@ -35,7 +35,7 @@ def test4():
 
 
 def test5():
-    spec = PackageSpec(PackageQuery("c"))
+    spec = PackageSpec("c")
     assert(spec[0].name == 'a')
     assert(spec[1].name == 'b')
     assert(spec[2].name == 'c')
@@ -44,7 +44,7 @@ def test5():
     assert(spec['c'].version_ == Version("3.0.0"))
 
 def test6():
-    spec = PackageSpec(PackageQuery("c@2.0.0 % b@1.0.0"))
+    spec = PackageSpec("c@2.0.0 % b@1.0.0")
     assert (spec[0].name == 'a')
     assert (spec[1].name == 'b')
     assert (spec[2].name == 'c')

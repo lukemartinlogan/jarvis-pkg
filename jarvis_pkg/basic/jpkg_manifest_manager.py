@@ -1,7 +1,3 @@
-"""
-
-"""
-
 from jarvis_pkg.util.naming import to_camel_case
 import os, sys
 import pandas as pd

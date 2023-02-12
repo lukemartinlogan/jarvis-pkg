@@ -1,5 +1,6 @@
 from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
 from jarvis_pkg.basic.package_query import PackageQuery
+from jarvis_pkg.query_parser.parse import QueryParser
 import pathlib
 import os
 
@@ -27,6 +28,6 @@ for repo, cls, name, installer in rows:
     else:
         raise Exception("Didn't list repo fully")
 manifest.print_repo(repo_name)
-query = PackageQuery("a")
+query = QueryParser("a").first()
 assert(query.cls == 'a')
 manifest.rm_repo(repo_name)

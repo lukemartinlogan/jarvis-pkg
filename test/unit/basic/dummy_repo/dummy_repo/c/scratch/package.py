@@ -1,6 +1,7 @@
 
 from jarvis_pkg.basic.package import Package
 from jarvis_pkg.basic.package_query import PackageQuery
+from jarvis_pkg.basic.package_query_list import PackageQueryList
 
 
 class CPackage(Package):
@@ -21,7 +22,7 @@ class CPackage(Package):
         self.depends_on('b')
 
     def get_dependencies(self, spec):
-        deps = []
+        deps = PackageQueryList()
         if spec['c'].matches("@3.0.0"):
             deps.append("a@3.0.0")
         else:
