@@ -1,5 +1,5 @@
 
-from jarvis_pkg.basic.package import Package
+from jarvis_pkg.basic.package import Package, install, uninstall
 from jarvis_pkg.basic.package_query import PackageQuery
 from jarvis_pkg.basic.package_query_list import PackageQueryList
 
@@ -29,3 +29,19 @@ class CPackage(Package):
             deps.append("a@2.0.0")
         deps.append("b")
         return deps
+
+    @install()
+    def phase1(self, spec):
+        print(f"In {self.name} phase 1")
+
+    @install()
+    def phase2(self, spec):
+        print(f"In {self.name} phase 2")
+
+    @uninstall()
+    def uphase1(self, spec):
+        print(f"In {self.name} uphase 1")
+
+    @uninstall()
+    def uphase2(self, spec):
+        print(f"In {self.name} uphase 2")

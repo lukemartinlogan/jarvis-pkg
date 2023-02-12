@@ -20,7 +20,7 @@ def uninstall():
     def wrap(method):
         def _jpkg_decor_impl(*args, **kwargs):
             self = args[0]
-            self.install_phases.append(method)
+            self.uninstall_phases.append(method)
         return _jpkg_decor_impl
     return wrap
 

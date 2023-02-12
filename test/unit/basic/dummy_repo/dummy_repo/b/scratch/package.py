@@ -1,5 +1,5 @@
 
-from jarvis_pkg.basic.package import Package
+from jarvis_pkg.basic.package import Package, install, uninstall
 from jarvis_pkg.basic.package_query_list import PackageQueryList
 
 
@@ -21,3 +21,19 @@ class BPackage(Package):
 
     def get_dependencies(self, spec):
         return PackageQueryList()
+
+    @install()
+    def phase1(self, spec):
+        print(f"In {self.name} phase 1")
+
+    @install()
+    def phase2(self, spec):
+        print(f"In {self.name} phase 2")
+
+    @uninstall()
+    def uphase1(self, spec):
+        print(f"In {self.name} uphase 1")
+
+    @uninstall()
+    def uphase2(self, spec):
+        print(f"In {self.name} uphase 2")
