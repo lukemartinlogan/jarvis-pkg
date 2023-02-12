@@ -113,13 +113,18 @@ class PackageSpec:
     def solidify_install_order(self):
         """
         Build the order with which packages should be installed in the
-        JpkgInstallManager
+        JpkgInstallManager. Also ensure that each package stores
+        reference to each package it depends on.
 
         :return:
         """
         self.install_order.sort(key=lambda x: x[1], reverse=True)
         for cls, order in self.install_order:
-            self.install_graph.append(self.spec[cls])
+            pkg = self.spec[cls]
+            for dep_query in pkg.all_dependencies:
+                dep_cls = dep_query.cls
+                pkg.dependencies_[dep_cls] = self.spec[dep_cls]
+            self.install_graph.append(pkg)
 
     def __getitem__(self, key):
         """

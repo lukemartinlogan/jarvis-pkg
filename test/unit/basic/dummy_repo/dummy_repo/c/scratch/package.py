@@ -40,11 +40,11 @@ class CPackage(Package):
         pass
 
     @install
-    def phase1(self, spec):
+    def phase1(self):
         print(f"In {self.name} phase 1")
 
     @install
-    def phase2(self, spec):
+    def phase2(self):
         print(f"In {self.name} phase 2")
 
     @uninstall

@@ -28,6 +28,14 @@ def test3():
     assert (not installer.exists("a@1.0.0"))
 
 
+def test4():
+    installer = JpkgInstallManager.get_instance()
+    installer.install_spec(PackageSpec("c@3.0.0"))
+    assert (installer.exists("c@3.0.0"))
+    installer.uninstall_package(QueryParser("c@3.0.0").first())
+    assert (not installer.exists("c@1.0.0"))
+
+
 repo_name = 'dummy_repo'
 manifest = JpkgManifestManager.get_instance()
 test_dir = pathlib.Path(__file__).parent.resolve()
@@ -37,3 +45,4 @@ manifest.add_repo(repo_dir)
 test1()
 test2()
 test3()
+test4()

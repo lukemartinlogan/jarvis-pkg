@@ -37,7 +37,7 @@ class JpkgInstallManager:
     def _register_package(self, pkg):
         if pkg.is_installed:
             df = self.df
-            df[df.uuid == pkg.uuid_]['ref'] += 1
+            df.loc[df.uuid == pkg.uuid_, 'ref'] += 1
         else:
             pkg.is_installed = True
             record = [[pkg.repo, pkg.cls, pkg.name, pkg.installer, pkg.version_,
@@ -54,12 +54,11 @@ class JpkgInstallManager:
                             full_uninstall=False):
         if pkg.is_installed:
             df = self.df
-            df = df[df.uuid == pkg.uuid_]
-            df['ref'] -= 1
+            df.loc[df.uuid == pkg.uuid_, 'ref'] -= 1
             if list(df['ref'])[0] == 0:
                 if primary or full_uninstall:
                     self.df = self.df[self.df.uuid != pkg.uuid_]
-        for dep_pkg in pkg.dependencies_:
+        for dep_pkg in pkg.dependencies_.values():
             self._unregister_package(dep_pkg, False, full_uninstall)
 
     def install_spec(self, pkg_spec):
@@ -68,7 +67,7 @@ class JpkgInstallManager:
             phases = pkg.install_phases
             for phase in phases:
                 try:
-                    phase(pkg, pkg_spec.spec)
+                    phase(pkg)
                 except Exception as e:
                     print(e)
                     return
