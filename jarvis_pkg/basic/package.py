@@ -7,22 +7,16 @@ from .version import Version
 from abc import ABC, abstractmethod
 
 
-def install():
-    def wrap(method):
-        def _jpkg_decor_impl(*args, **kwargs):
-            self = args[0]
-            self.install_phases.append(method)
-        return _jpkg_decor_impl
-    return wrap
+def install(method):
+    def _install_impl(*args, **kwargs):
+        method(*args, **kwargs)
+    return _install_impl
 
 
-def uninstall():
-    def wrap(method):
-        def _jpkg_decor_impl(*args, **kwargs):
-            self = args[0]
-            self.uninstall_phases.append(method)
-        return _jpkg_decor_impl
-    return wrap
+def uninstall(method):
+    def _uninstall_impl(*args, **kwargs):
+        method(*args, **kwargs)
+    return _uninstall_impl
 
 
 class Package(ABC):
@@ -43,11 +37,21 @@ class Package(ABC):
         self.uuid_ = None
         self.is_installed = False
 
+        self._parse_decorators()
         self.define_class()
         self.define_versions()
         self.define_variants()
         if do_full_load:
             self.define_dependencies()
+
+    def _parse_decorators(self):
+        for superclass in self.__class__.__mro__:
+            for value in superclass.__dict__.values():
+                if callable(value):
+                    if value.__name__ == '_install_impl':
+                        self.install_phases.append(value)
+                    if value.__name__ == '_uninstall_impl':
+                        self.uninstall_phases.append(value)
 
     def _get_name(self):
         name = self.__class__.__name__

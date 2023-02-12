@@ -21,18 +21,18 @@ class APackage(Package):
     def get_dependencies(self, spec):
         return PackageQueryList()
 
-    @install()
+    @install
     def phase1(self, spec):
         print(f"In {self.name} phase 1")
 
-    @install()
+    @install
     def phase2(self, spec):
         print(f"In {self.name} phase 2")
 
-    @uninstall()
+    @uninstall
     def uphase1(self, spec):
         print(f"In {self.name} uphase 1")
 
-    @uninstall()
+    @uninstall
     def uphase2(self, spec):
         print(f"In {self.name} uphase 2")

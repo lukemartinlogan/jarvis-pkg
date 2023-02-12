@@ -12,6 +12,7 @@ import pathlib
 import pandas as pd
 from .jpkg_manager import JpkgManager
 from jarvis_pkg.util.system_info import SystemInfo
+from jarvis_pkg.query_parser.parse import QueryParser
 
 
 class JpkgInstallManager:
@@ -24,7 +25,6 @@ class JpkgInstallManager:
         return JpkgInstallManager.instance_
 
     def __init__(self):
-        # TODO(llogan): add sysinfo to the dataframe filter
         self.columns = [
             'repo', 'cls', 'name', 'version',
             'sysinfo', 'uuid', 'ref', 'pkg'
@@ -34,7 +34,7 @@ class JpkgInstallManager:
         if os.path.exists(self.jpkg.installed_path):
             self.df = pd.load_parquet(self.jpkg.installed_path)
 
-    def register_package(self, pkg):
+    def _register_package(self, pkg):
         if pkg.is_installed:
             df = self.df
             df[df.uuid == pkg.uuid_]['ref'] += 1
@@ -46,16 +46,16 @@ class JpkgInstallManager:
                   0, pkg]],
                 columns=self.columns)
 
-    def get_refcnt(self, pkg):
+    def _get_refcnt(self, pkg):
         df = self.df
         return list(df[df.uuid == pkg.uuid_]['ref'])[0]
 
-    def unregister_package(self, pkg):
+    def _unregister_package(self, pkg):
         if pkg.is_installed:
             df = self.df
             df[df.uuid == pkg.uuid_]['ref'] -= 1
         for dep_pkg in pkg.dependencies_:
-            self.unregister_package(dep_pkg)
+            self._unregister_package(dep_pkg)
 
     def install_spec(self, pkg_spec):
         for pkg in pkg_spec.install_graph:
@@ -67,13 +67,13 @@ class JpkgInstallManager:
                     print(e)
                     return
         for pkg in pkg_spec.install_order:
-            self.register_package(pkg)
+            self._register_package(pkg)
 
     def uninstall_package(self, pkg):
-        if self.get_refcnt(pkg) > 1:
+        if self._get_refcnt(pkg) > 1:
             raise Exception(f"Cannot uninstall {pkg.name} since it's a "
                             f"dependency of another package")
-        self.unregister_package(pkg)
+        self._unregister_package(pkg)
         phases = pkg.uninstall_phases
         for phase in phases:
             phase(pkg)
@@ -92,6 +92,8 @@ class JpkgInstallManager:
         :return:
         """
         df = self.df
+        if isinstance(pkg_query, str):
+            pkg_query = QueryParser(pkg_query).first()
         if pkg_query.repo is not None:
             df = df[df.repo == pkg_query.repo]
         if pkg_query.cls is not None:
@@ -127,6 +129,9 @@ class JpkgInstallManager:
             return matches[0]
         else:
             return None
+
+    def exists(self, pkg_query):
+        return len(self.match(pkg_query)) != 0
 
     def save(self):
         self.df.to_parquet(self.jpkg.installed_path)
