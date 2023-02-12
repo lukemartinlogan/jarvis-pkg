@@ -168,6 +168,14 @@ class Package(ABC):
         """
         pass
 
+    @abstractmethod
+    def load_env(self):
+        pass
+
+    @abstractmethod
+    def unload_env(self):
+        pass
+
     def to_query(self):
         query = PackageQuery()
         query.name = self.name

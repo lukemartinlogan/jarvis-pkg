@@ -33,6 +33,12 @@ class CPackage(Package):
         deps.append("b")
         return deps
 
+    def load_env(self):
+        pass
+
+    def unload_env(self):
+        pass
+
     @install
     def phase1(self, spec):
         print(f"In {self.name} phase 1")
