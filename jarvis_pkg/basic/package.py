@@ -26,6 +26,7 @@ class Package(ABC):
         super().__init__()
         self.jpkg = JpkgManager.get_instance()
         self.manifest = JpkgManifestManager.get_instance()
+        self.installer = self._get_installer()
         self.repo = self._get_repo()
         self.name = self._get_name()
         self.cls = None
@@ -57,6 +58,12 @@ class Package(ABC):
                         self.install_phases.append(value)
                     if value.__name__ == '_uninstall_impl':
                         self.uninstall_phases.append(value)
+
+    def _get_installer(self):
+        filepath = inspect.getfile(self.__class__)
+        installer_path = pathlib.Path(filepath).parent.resolve()
+        installer = os.path.basename(installer_path)
+        return installer
 
     def _get_repo(self):
         filepath = inspect.getfile(self.__class__)
@@ -105,27 +112,59 @@ class Package(ABC):
 
     @abstractmethod
     def define_class(self):
+        """
+        Define the class this package belongs to.
+
+        :return: None
+        """
         pass
 
     @abstractmethod
     def define_versions(self):
+        """
+        Define different versions of this package and where to locate them.
+
+        :return: None
+        """
         pass
 
     @abstractmethod
     def define_variants(self):
+        """
+        Define any variants on this package.
+
+        :return: None
+        """
         pass
 
     @abstractmethod
     def define_dependencies(self):
+        """
+        Define the set of all potential packages which might be needed
+        for this package to be installed.
+
+        :return: None
+        """
+
+        pass
+
+    @abstractmethod
+    def installer_requirements(self):
+        """
+        Any requirements of the system in order to use a package.
+        Called during "match" in ManifestManager.
+
+        :return: True if the system matches requirements. False otherwise.
+        """
         pass
 
     @abstractmethod
     def get_dependencies(self, spec):
         """
-        Get dependencies depending on the installation specification.
+        Get dependencies based on the installation specification.
 
         :param spec: the set of solidified packages
-        :return: list of dependency package queries
+        :return: PackageQueryList()
         """
         pass
 

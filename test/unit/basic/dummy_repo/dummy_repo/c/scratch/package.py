@@ -21,6 +21,9 @@ class CPackage(Package):
         self.depends_on('a')
         self.depends_on('b')
 
+    def installer_requirements(self):
+        return True
+
     def get_dependencies(self, spec):
         deps = PackageQueryList()
         if spec['c'].matches("@3.0.0"):

@@ -155,7 +155,6 @@ class JpkgManifestManager:
         :param pkg_query: the query to resolve
         :return:
         """
-
         df = self.repos
         if pkg_query.repo is not None:
             df = df[df.repo == pkg_query.repo]
@@ -171,6 +170,8 @@ class JpkgManifestManager:
         matches = []
         for name, repo, installer in zip(pkg_names, pkg_nses, installers):
             pkg = self._load_pkg(repo, name, installer)
+            if not pkg.installer_requirements():
+                continue
             solid_pkg = pkg.from_query(pkg_query)
             if solid_pkg is not None:
                 matches.append(solid_pkg)

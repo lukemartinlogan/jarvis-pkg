@@ -26,7 +26,7 @@ class JpkgInstallManager:
 
     def __init__(self):
         self.columns = [
-            'repo', 'cls', 'name', 'version',
+            'repo', 'cls', 'name', 'installer', 'version',
             'sysinfo', 'uuid', 'ref', 'pkg'
         ]
         self.df = pd.DataFrame(columns=self.columns)
@@ -40,7 +40,7 @@ class JpkgInstallManager:
             df[df.uuid == pkg.uuid_]['ref'] += 1
         else:
             pkg.is_installed = True
-            record = [[pkg.repo, pkg.cls, pkg.name, pkg.version_,
+            record = [[pkg.repo, pkg.cls, pkg.name, pkg.installer, pkg.version_,
                        SystemInfo.get_instance(), pkg.uuid_,
                        1, pkg]]
             self.df = pd.concat([self.df,

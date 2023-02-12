@@ -20,6 +20,9 @@ class DPackage(Package):
         self.depends_on('d')
         self.depends_on('a')
 
+    def installer_requirements(self):
+        return True
+
     def get_dependencies(self, spec):
         return PackageQueryList()
 

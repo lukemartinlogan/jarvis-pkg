@@ -18,6 +18,9 @@ class APackage(Package):
     def define_dependencies(self):
         pass
 
+    def installer_requirements(self):
+        return True
+
     def get_dependencies(self, spec):
         return PackageQueryList()
 
