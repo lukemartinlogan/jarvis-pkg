@@ -43,6 +43,7 @@ def test5():
     assert(spec['b'].version_ == Version("3.0.0"))
     assert(spec['c'].version_ == Version("3.0.0"))
 
+
 def test6():
     spec = PackageSpec("c@2.0.0 % b@1.0.0")
     assert (spec[0].name == 'a')
@@ -52,10 +53,16 @@ def test6():
     assert (spec['b'].version_ == Version("1.0.0"))
     assert (spec['c'].version_ == Version("2.0.0"))
 
+
 repo_name = 'dummy_repo'
 manifest = JpkgManifestManager.get_instance()
 test_dir = pathlib.Path(__file__).parent.resolve()
 repo_dir = os.path.join(test_dir, repo_name)
 manifest.add_repo(repo_dir)
 
+test1()
+test2()
+test3()
+test4()
+test5()
 test6()
