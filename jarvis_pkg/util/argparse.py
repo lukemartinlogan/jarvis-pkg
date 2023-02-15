@@ -83,7 +83,8 @@ class ArgParse(ABC):
             'default': default,
             'action': action,
             'msg': msg,
-            'required': self.pos_required
+            'required': self.pos_required,
+            'has_input': True
         }
         if is_kwarg:
             self.pos_required = False
@@ -110,7 +111,8 @@ class ArgParse(ABC):
             'default': default,
             'action': None,
             'msg': msg,
-            'required': False
+            'required': False,
+            'has_input': not is_other
         }
         if not is_other:
             self.add_bool_kw_arg("--with-" + name.strip('-'),
@@ -198,12 +200,17 @@ class ArgParse(ABC):
                     self._invalid_kwarg(opt_name)
 
             # Get argument type
-            opt_dict_name = menu['kw_opts'][opt_name]['dict_name']
-            opt_type = menu['kw_opts'][opt_name]['type']
-            opt_default = menu['kw_opts'][opt_name]['default']
-            opt_action = menu['kw_opts'][opt_name]['action']
-            opt_choices = menu['kw_opts'][opt_name]['choices']
-            if opt_action is not None:
+            opt = menu['kw_opts'][opt_name]
+            opt_has_input = opt['has_input']
+            opt_dict_name = opt['dict_name']
+            opt_type = opt['type']
+            opt_default = opt['default']
+            opt_action = opt['action']
+            opt_choices = opt['choices']
+            if not opt_has_input:
+                arg = opt_default
+                i += 1
+            elif opt_action is not None:
                 opt_action()
                 arg = None
                 i += 1

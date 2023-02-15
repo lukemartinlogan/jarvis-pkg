@@ -126,6 +126,23 @@ def test7():
     assert (args.bool == False)
 
 
+def test8():
+    """
+    Test remainder
+
+    :return:
+    """
+    args = Args1("repo add 25 hello --with-bool "
+                 "--test-choices CHOICE1 "
+                 "--no-bool hello there hello there",
+                 exit_on_fail=False)
+    assert (args.arg1 == '25')
+    assert (args.arg2 == 'hello')
+    assert (args.test_choices == ArgOpts.CHOICE1)
+    assert (args.bool == False)
+    assert (args.remainder == "hello there hello there")
+
+
 test1()
 test2()
 test3()
@@ -133,4 +150,5 @@ test4()
 test5()
 test6()
 test7()
+test8()
 
