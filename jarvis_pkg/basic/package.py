@@ -5,23 +5,12 @@ from jarvis_pkg.util.naming import to_snake_case
 from .jpkg_manifest_manager import JpkgManifestManager
 from .jpkg_manager import JpkgManager
 from .version import Version
+from .installer import Installer, install, uninstall
 from abc import ABC, abstractmethod
 import inspect, pathlib, os
 
 
-def install(method):
-    def _install_impl(*args, **kwargs):
-        method(*args, **kwargs)
-    return _install_impl
-
-
-def uninstall(method):
-    def _uninstall_impl(*args, **kwargs):
-        method(*args, **kwargs)
-    return _uninstall_impl
-
-
-class Package(ABC):
+class Package(Installer):
     def __init__(self, do_full_load):
         super().__init__()
         self.jpkg = JpkgManager.get_instance()
@@ -33,8 +22,6 @@ class Package(ABC):
         self.all_versions = []
         self.all_variants = {}
         self.all_dependencies = []
-        self.install_phases = []
-        self.uninstall_phases = []
 
         self.variants_ = {}
         self.dependencies_ = {}
@@ -81,15 +68,6 @@ class Package(ABC):
         self.uuid_ = state['uuid_']
         self.is_installed = state['is_installed']
         self.install_path = state['install_path']
-
-    def _parse_decorators(self):
-        for superclass in self.__class__.__mro__:
-            for value in superclass.__dict__.values():
-                if callable(value):
-                    if value.__name__ == '_install_impl':
-                        self.install_phases.append(value)
-                    if value.__name__ == '_uninstall_impl':
-                        self.uninstall_phases.append(value)
 
     def _get_installer(self):
         filepath = inspect.getfile(self.__class__)
@@ -172,7 +150,7 @@ class Package(ABC):
     @abstractmethod
     def define_dependencies(self):
         """
-        Define the set of all potential packages which might be needed
+        Define the set of all potential installers which might be needed
         for this package to be installed.
 
         :return: None
@@ -181,21 +159,11 @@ class Package(ABC):
         pass
 
     @abstractmethod
-    def installer_requirements(self):
-        """
-        Any requirements of the system in order to use a package.
-        Called during "match" in ManifestManager.
-
-        :return: True if the system matches requirements. False otherwise.
-        """
-        pass
-
-    @abstractmethod
     def get_dependencies(self, spec):
         """
         Get dependencies based on the installation specification.
 
-        :param spec: the set of solidified packages
+        :param spec: the set of solidified installers
         :return: PackageQueryList()
         """
         pass

@@ -1,15 +1,15 @@
 """"
-This file builds a solidified set of packages to install based on the
+This file builds a solidified set of installers to install based on the
 user's query.
 
-1. Determine the set of packages needed to be installed
+1. Determine the set of installers needed to be installed
 2.
 
 Solidify root package
 - Which version of a will be installed
 - Check if a package matching this query is already installed?
 - If not, select the latest version
-Solidify next-level packages
+Solidify next-level installers
 
 """
 from jarvis_pkg.query_parser.parse import QueryParser
@@ -21,7 +21,7 @@ from .package_query import PackageQuery
 class PackageSpec:
     def __init__(self, pkg_query):
         """
-        For a single package, determine the set of packages to install
+        For a single package, determine the set of installers to install
         and the order to install them.
 
         :param pkg_query: the primary package to install
@@ -34,7 +34,7 @@ class PackageSpec:
         self.spec = {}
         self.install_graph = []
 
-        # Determine the order with which to solidify packages
+        # Determine the order with which to solidify installers
         self.get_install_order(pkg_query, 0, {})
         self.install_order = list(self.install_order.items())
         self.install_order.sort(key=lambda x: x[1])
@@ -48,7 +48,7 @@ class PackageSpec:
             self.class_queries[dep_cls].append(dep_query)
         self.build_spec()
 
-        # Solidify the order with which packages are installed
+        # Solidify the order with which installers are installed
         self.solidify_install_order()
 
     def get_install_order(self, pkg_query, order, cur_env):
@@ -76,7 +76,7 @@ class PackageSpec:
 
     def build_spec(self):
         """
-        Solidifies the set of packages in order.
+        Solidifies the set of installers in order.
         Modifies self.spec and self.class_queries
 
         :return: None
@@ -112,7 +112,7 @@ class PackageSpec:
 
     def solidify_install_order(self):
         """
-        Build the order with which packages should be installed in the
+        Build the order with which installers should be installed in the
         JpkgInstallManager. Also ensure that each package stores
         reference to each package it depends on.
 

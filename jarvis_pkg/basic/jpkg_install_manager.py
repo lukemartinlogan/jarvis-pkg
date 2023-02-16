@@ -1,8 +1,8 @@
 """
 This file is an index to all important paths in jpkg
 
-1. manifests: the set of all packages
-2. installed: the set of all installed packages
+1. manifests: the set of all installers
+2. installed: the set of all installed installers
 3. setup.log: records the installation process to avoid repetition in
 case of failure
 """
@@ -14,6 +14,7 @@ from .jpkg_manager import JpkgManager
 from jarvis_pkg.util.system_info import SystemInfo
 from jarvis_pkg.query_parser.parse import QueryParser
 from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
+from .introspectable import Introspectable
 from tabulate import tabulate
 
 
@@ -68,6 +69,19 @@ class JpkgInstallManager:
         for dep_pkg in pkg.dependencies_.values():
             self._unregister_package(dep_pkg, False, full_uninstall)
 
+    def introspect(self):
+        pkg_root = os.path.join(self.jpkg.jpkg_root, 'jarvs_pkg', 'installers')
+        pkg_types = os.listdir(pkg_root)
+        for pkg_type in pkg_types:
+            pkg = __import__(f"jarvis_pkg.installers.{pkg_type}")(True)
+            if isinstance(pkg, Introspectable):
+                queries = pkg.introspect()
+                for pkg_query in queries:
+                    matches = self.manifest.match(pkg_query)
+                    for pkg in matches:
+                        pkg.make_uuid(self.df['uuid'])
+                        self._register_package(pkg)
+
     def install_spec(self, pkg_spec):
         main_pkg = pkg_spec.install_graph[-1]
         if main_pkg.is_installed:
@@ -90,9 +104,9 @@ class JpkgInstallManager:
             pkg_query = QueryParser(pkg_query).first()
         matches = self.match(pkg_query)
         if len(matches) > 1:
-            raise Exception(f"Multiple packages match the query: {pkg_query}")
+            raise Exception(f"Multiple installers match the query: {pkg_query}")
         if len(matches) == 0:
-            raise Exception(f"No packages match the query: {pkg_query}")
+            raise Exception(f"No installers match the query: {pkg_query}")
         pkg = matches[0]
         if self._get_refcnt(pkg) > 1:
             raise Exception(f"Cannot uninstall {pkg.name} since it's a "
@@ -125,7 +139,7 @@ class JpkgInstallManager:
 
     def match(self, pkg_query):
         """
-        Find all packages matching this query
+        Find all installers matching this query
 
         :param pkg_query: the query to match
         :return:

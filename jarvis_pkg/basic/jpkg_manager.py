@@ -1,8 +1,8 @@
 """
 This file is an index to all important paths in jpkg
 
-1. manifests: the set of all packages
-2. installed: the set of all installed packages
+1. manifests: the set of all installers
+2. installed: the set of all installed installers
 """
 
 import os, sys

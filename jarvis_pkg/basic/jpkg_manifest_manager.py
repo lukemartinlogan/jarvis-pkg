@@ -59,7 +59,7 @@ class JpkgManifestManager:
 
     def rm_repo(self, repo):
         """
-        Untrack all packages relating to the repo
+        Untrack all installers relating to the repo
 
         :param repo: the repo to remove
         :return:
@@ -70,7 +70,7 @@ class JpkgManifestManager:
 
     def list_repo(self, repo=None):
         """
-        List all packages corresponding to a repo
+        List all installers corresponding to a repo
 
         :param repo:
         :return:
@@ -166,7 +166,7 @@ class JpkgManifestManager:
 
     def match(self, pkg_query):
         """
-        The set of all packages which match the query
+        The set of all installers which match the query
 
         :param pkg_query: the query to resolve
         :return:

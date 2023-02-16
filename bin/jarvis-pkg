@@ -71,3 +71,5 @@ if __name__ == '__main__':
             installer.save()
         else:
             installer.list()
+    elif args.menu_name == "introspect":
+        installer.introspect()
