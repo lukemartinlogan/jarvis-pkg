@@ -14,6 +14,7 @@ from .jpkg_manager import JpkgManager
 from jarvis_pkg.util.system_info import SystemInfo
 from jarvis_pkg.query_parser.parse import QueryParser
 from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
+from tabulate import tabulate
 
 
 class JpkgInstallManager:
@@ -95,8 +96,23 @@ class JpkgInstallManager:
         for phase in phases:
             phase(pkg)
 
-    def list(self, pkg_query):
-        pass
+    def list(self, pkg_query=None):
+        """
+        List all package names which match the query
+        [name] [version] [repo] [installer] [path]
+
+        :param pkg_query:
+        :return:
+        """
+        matches = self.match(pkg_query)
+        headers = ['Class', 'Name', 'Version', 'Repo', 'Installer', 'Path']
+        table = []
+        for pkg in matches:
+            table.append([
+                pkg.cls, pkg.name, pkg.version_, pkg.repo,
+                pkg.installer, pkg.install_path
+            ])
+        print(tabulate(table, headers=headers))
 
     def info(self, pkg_query):
         pass
@@ -108,6 +124,11 @@ class JpkgInstallManager:
         :param pkg_query: the query to match
         :return:
         """
+        if pkg_query is None:
+            pkg_states = list(self.df['pkg_state'])
+            pkgs = [self.manifest.load_pkg_from_state(pkg_state)
+             for pkg_state in pkg_states]
+            return pkgs
         df = self.df
         if isinstance(pkg_query, str):
             pkg_query = QueryParser(pkg_query).first()

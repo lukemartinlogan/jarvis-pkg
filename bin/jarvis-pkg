@@ -64,7 +64,10 @@ if __name__ == '__main__':
             installer.uninstall_package(pkg_query)
         installer.save()
     elif args.menu_name == "list":
-        queries = QueryParser(args.remainder).queries
-        for pkg_query in queries:
-            installer.list(pkg_query)
-        installer.save()
+        if args.remainder is not None:
+            queries = QueryParser(args.remainder).queries
+            for pkg_query in queries:
+                installer.list(pkg_query)
+            installer.save()
+        else:
+            installer.list()

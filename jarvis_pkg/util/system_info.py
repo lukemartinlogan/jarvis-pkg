@@ -49,4 +49,18 @@ class SystemInfo:
                 return grp.group(1)
 
     def __hash__(self):
-        return hash(str([self.os, self.os_like, self.os_version, self.ksemantic, self.krelease, self.ktype, self.cpu, self.cpu_family]))
+        return hash(str([self.os, self.os_like,
+                         self.os_version, self.ksemantic,
+                         self.krelease, self.ktype,
+                         self.cpu, self.cpu_family]))
+
+    def __eq__(self, other):
+        return (
+            (self.os == other.os) and
+            (self.os_like == other.os_like) and
+            (self.os_version == other.os_version) and
+            (self.ksemantic == other.ksemantic) and
+            (self.krelease == other.krelease) and
+            (self.cpu == other.cpu) and
+            (self.cpu_family == other.cpu_family)
+        )
