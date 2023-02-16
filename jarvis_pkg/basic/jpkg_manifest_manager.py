@@ -24,7 +24,7 @@ class JpkgManifestManager:
         self.repos = pd.DataFrame(columns=self.columns)
         self.jpkg = JpkgManager.get_instance()
         if os.path.exists(self.jpkg.manifest_path):
-            self.repos = pd.read_parquet(self.jpkg.manifest_path)
+            self.repos = pd.read_pickle(self.jpkg.manifest_path)
 
     def add_repo(self, repo_path):
         """
@@ -109,7 +109,7 @@ class JpkgManifestManager:
                 (df.name == name) &
                 (df.installer == installer)
             ]
-            repo_path = path_df.iloc[0]
+            repo_path = list(path_df['repo_path'])[0]
         if repo_path is None:
             return None
         class_name = to_camel_case(f"{name}_package")
@@ -138,6 +138,13 @@ class JpkgManifestManager:
             return pkg_cls(True)
         else:
             return pkg_cls(False)
+
+    def load_pkg_from_state(self, pkg_state):
+        pkg = self._load_pkg(pkg_state['repo'],
+                             pkg_state['name'],
+                             pkg_state['installer'])
+        pkg.set_state(pkg_state)
+        return pkg
 
     def load_pkgs(self, repo, name):
         """
@@ -220,4 +227,4 @@ class JpkgManifestManager:
             return None
 
     def save(self):
-        self.repos.to_parquet(self.jpkg.manifest_path)
+        self.repos.to_pickle(self.jpkg.manifest_path)

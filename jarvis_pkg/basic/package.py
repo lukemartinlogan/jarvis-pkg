@@ -50,6 +50,38 @@ class Package(ABC):
         if do_full_load:
             self.define_dependencies()
 
+    def get_state(self):
+        deps = {}
+        for key, dep_pkg in self.dependencies_.items():
+            deps[key] = dep_pkg.get_state()
+        return {
+            'installer': self.installer,
+            'repo': self.repo,
+            'name': self.name,
+            'cls': self.cls,
+            'variants_': self.variants_,
+            'dependencies_': deps,
+            'version_': self.version_,
+            'uuid_': self.uuid_,
+            'is_installed': self.is_installed,
+            'install_path': self.install_path,
+        }
+
+    def set_state(self, state):
+        deps = {}
+        for key, dep_pkg_state in state['dependencies_'].items():
+            deps[key] = self.manifest.load_pkg_from_state(dep_pkg_state)
+        self.installer = state['installer']
+        self.repo = state['repo']
+        self.name = state['name']
+        self.cls = state['cls']
+        self.variants_ = state['variants_']
+        self.dependencies_ = deps
+        self.version_ = state['version_']
+        self.uuid_ = state['uuid_']
+        self.is_installed = state['is_installed']
+        self.install_path = state['install_path']
+
     def _parse_decorators(self):
         for superclass in self.__class__.__mro__:
             for value in superclass.__dict__.values():

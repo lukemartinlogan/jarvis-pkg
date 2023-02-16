@@ -54,17 +54,17 @@ if __name__ == '__main__':
         else:
             manifest.print_repo()
     elif args.menu_name == "install":
-        queries = QueryParser(installer.remainder).queries
+        queries = QueryParser(args.remainder).queries
         for pkg_query in queries:
             installer.install_spec(PackageSpec(pkg_query))
         installer.save()
     elif args.menu_name == "uninstall":
-        queries = QueryParser(installer.remainder).queries
+        queries = QueryParser(args.remainder).queries
         for pkg_query in queries:
             installer.uninstall_package(pkg_query)
         installer.save()
     elif args.menu_name == "list":
-        queries = QueryParser(installer.remainder).queries
+        queries = QueryParser(args.remainder).queries
         for pkg_query in queries:
             installer.list(pkg_query)
         installer.save()

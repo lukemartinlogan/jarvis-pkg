@@ -25,9 +25,9 @@ class JpkgManager:
         if not os.path.exists(self.jpkg_state_dir):
             os.mkdir(self.jpkg_state_dir)
         self.manifest_path = os.path.join(self.jpkg_state_dir,
-                                          'manifest.parquet')
+                                          'manifest.pickle')
         self.installed_path = os.path.join(self.jpkg_state_dir,
-                                           'installed.parquet')
+                                           'installed.pickle')
         self.pkg_dir = os.path.join(self.jpkg_state_dir, 'pkgs')
         if not os.path.exists(self.pkg_dir):
             os.mkdir(self.pkg_dir)

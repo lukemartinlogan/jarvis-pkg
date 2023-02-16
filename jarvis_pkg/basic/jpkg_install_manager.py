@@ -13,6 +13,7 @@ import pandas as pd
 from .jpkg_manager import JpkgManager
 from jarvis_pkg.util.system_info import SystemInfo
 from jarvis_pkg.query_parser.parse import QueryParser
+from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
 
 
 class JpkgInstallManager:
@@ -27,12 +28,13 @@ class JpkgInstallManager:
     def __init__(self):
         self.columns = [
             'repo', 'cls', 'name', 'installer', 'version',
-            'sysinfo', 'uuid', 'ref', 'pkg'
+            'sysinfo', 'uuid', 'ref', 'pkg_state'
         ]
         self.df = pd.DataFrame(columns=self.columns)
         self.jpkg = JpkgManager.get_instance()
+        self.manifest = JpkgManifestManager.get_instance()
         if os.path.exists(self.jpkg.installed_path):
-            self.df = pd.read_parquet(self.jpkg.installed_path)
+            self.df = pd.read_pickle(self.jpkg.installed_path)
 
     def _register_package(self, pkg):
         if pkg.is_installed:
@@ -42,9 +44,9 @@ class JpkgInstallManager:
             pkg.is_installed = True
             record = [[pkg.repo, pkg.cls, pkg.name, pkg.installer, pkg.version_,
                        SystemInfo.get_instance(), pkg.uuid_,
-                       1, pkg]]
+                       1, pkg.get_state()]]
             self.df = pd.concat([self.df,
-                                pd.DataFrame(record, columns=self.columns)])
+                                 pd.DataFrame(record, columns=self.columns)])
 
     def _get_refcnt(self, pkg):
         df = self.df
@@ -118,9 +120,10 @@ class JpkgInstallManager:
         df = df[df.sysinfo == SystemInfo.get_instance()]
         if len(df) == 0:
             return []
-        pkgs = list(df['pkg'])
+        pkgs = list(df['pkg_state'])
         matches = []
-        for pkg in pkgs:
+        for pkg_state in pkgs:
+            pkg = self.manifest.load_pkg_from_state(pkg_state)
             new_pkg = pkg.from_query(pkg_query)
             new_pkg.is_installed = True
             if new_pkg is not None:
@@ -146,4 +149,4 @@ class JpkgInstallManager:
         return len(self.match(pkg_query)) != 0
 
     def save(self):
-        self.df.to_parquet(self.jpkg.installed_path)
+        self.df.to_pickle(self.jpkg.installed_path)
