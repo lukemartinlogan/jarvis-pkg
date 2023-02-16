@@ -64,6 +64,10 @@ class JpkgInstallManager:
             self._unregister_package(dep_pkg, False, full_uninstall)
 
     def install_spec(self, pkg_spec):
+        main_pkg = pkg_spec.install_graph[-1]
+        if main_pkg.is_installed:
+            print(f"{main_pkg.name}-{main_pkg.uuid_} is already installed")
+            return
         for pkg in pkg_spec.install_graph:
             pkg.make_uuid(self.df['uuid'])
             phases = pkg.install_phases
