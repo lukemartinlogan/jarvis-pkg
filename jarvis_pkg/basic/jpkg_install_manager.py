@@ -35,7 +35,8 @@ class JpkgInstallManager:
         self.jpkg = JpkgManager.get_instance()
         self.manifest = JpkgManifestManager.get_instance()
         if os.path.exists(self.jpkg.installed_path):
-            self.df = pd.read_pickle(self.jpkg.installed_path)
+            self.df = pd.read_pickle(self.jpkg.installed_path).reset_index(
+                drop=True)
 
     def _register_package(self, pkg):
         if pkg.is_installed:
@@ -58,9 +59,12 @@ class JpkgInstallManager:
         if pkg.is_installed:
             df = self.df
             df.loc[df.uuid == pkg.uuid_, 'ref'] -= 1
-            if list(df['ref'])[0] == 0:
+            ref = list(df.loc[df.uuid == pkg.uuid_, 'ref'])[0]
+            if ref <= 0:
                 if primary or full_uninstall:
-                    self.df = self.df[self.df.uuid != pkg.uuid_]
+                    df = self.df
+                    self.df.drop(df[df.uuid == pkg.uuid_].index,
+                                 inplace=True)
         for dep_pkg in pkg.dependencies_.values():
             self._unregister_package(dep_pkg, False, full_uninstall)
 
@@ -87,6 +91,8 @@ class JpkgInstallManager:
         matches = self.match(pkg_query)
         if len(matches) > 1:
             raise Exception(f"Multiple packages match the query: {pkg_query}")
+        if len(matches) == 0:
+            raise Exception(f"No packages match the query: {pkg_query}")
         pkg = matches[0]
         if self._get_refcnt(pkg) > 1:
             raise Exception(f"Cannot uninstall {pkg.name} since it's a "
