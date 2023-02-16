@@ -8,41 +8,63 @@ jpkg install pkg_name@version variant=a variant=b +variant -variant ^ dep_name v
 
 from jarvis_pkg.basic.jpkg_manager import JpkgManager
 from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
-import argparse
-from enum import Enum
+from jarvis_pkg.basic.jpkg_install_manager import JpkgInstallManager
+from jarvis_pkg.basic.package_spec import PackageSpec
+from jarvis_pkg.query_parser.parse import QueryParser
+from jarvis_pkg.util.argparse import ArgParse
 import sys
+import shlex
 
 
-class JarvisPkgOp(Enum):
-    REGISTER = "register"
-    INSTALL = "install"
-    UNINSTALL = "uninstall"
-    UPDATE = "update"
-    LOAD = "load"
-    LIST = "list"
-    FIND = "find"
-    REPO = "repo"
-
-
-class JpkgParseArgs:
-    def __init__(self, args):
-        op = args[0]
-        if op == JarvisPkgOp.INSTALL:
-            pass
-        elif op == JarvisPkgOp.UPDATE:
-            pass
-        elif op == JarvisPkgOp.UNINSTALL:
-            pass
-        elif op == JarvisPkgOp.LOAD:
-            pass
-        elif op == JarvisPkgOp.LIST:
-            pass
-        elif op == JarvisPkgOp.FIND:
-            pass
-        elif op == JarvisPkgOp.REPO:
-            pass
+class JarvisArgs(ArgParse):
+    def define_options(self):
+        self.add_menu("repo add", use_remainder=True)
+        self.add_menu("repo rm", use_remainder=True)
+        self.add_menu("repo list", use_remainder=True)
+        self.add_menu("install", use_remainder=True)
+        self.end_required()
+        self.add_arg("--root", argtype=bool, default=False,
+                     msg="Whether or not to support root installs")
+        self.add_menu("uninstall", use_remainder=True)
+        self.end_required()
+        self.add_arg("--root", argtype=bool, default=False,
+                     msg="Whether or not to support root installs")
+        self.add_menu("list", use_remainder=True)
 
 
 if __name__ == '__main__':
-    args = JpkgParseArgs(sys.argv)
-
+    args = JarvisArgs()
+    manifest = JpkgManifestManager.get_instance()
+    installer = JpkgInstallManager.get_instance()
+    if args.menu_name == "repo add":
+        repos = shlex.split(args.remainder)
+        for repo in repos:
+            manifest.add_repo(repo)
+        manifest.save()
+    elif args.menu_name == "repo rm":
+        repos = shlex.split(args.remainder)
+        for repo in repos:
+            manifest.rm_repo(repo)
+        manifest.save()
+    elif args.menu_name == "repo list":
+        if args.remainder is not None:
+            repos = shlex.split(args.remainder)
+            for repo in repos:
+                manifest.print_repo(repo)
+        else:
+            manifest.print_repo()
+    elif args.menu_name == "install":
+        queries = QueryParser(installer.remainder).queries
+        for pkg_query in queries:
+            installer.install_spec(PackageSpec(pkg_query))
+        installer.save()
+    elif args.menu_name == "uninstall":
+        queries = QueryParser(installer.remainder).queries
+        for pkg_query in queries:
+            installer.uninstall_package(pkg_query)
+        installer.save()
+    elif args.menu_name == "list":
+        queries = QueryParser(installer.remainder).queries
+        for pkg_query in queries:
+            installer.list(pkg_query)
+        installer.save()

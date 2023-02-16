@@ -32,7 +32,7 @@ class JpkgInstallManager:
         self.df = pd.DataFrame(columns=self.columns)
         self.jpkg = JpkgManager.get_instance()
         if os.path.exists(self.jpkg.installed_path):
-            self.df = pd.load_parquet(self.jpkg.installed_path)
+            self.df = pd.read_parquet(self.jpkg.installed_path)
 
     def _register_package(self, pkg):
         if pkg.is_installed:

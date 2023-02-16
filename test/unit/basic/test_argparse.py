@@ -21,7 +21,7 @@ class Args1(ArgParse):
         self.add_arg("arg3",
                      msg="Third argument")
 
-        self.add_menu("repo/add", use_remainder=True)
+        self.add_menu("repo add", use_remainder=True)
         self.start_required()
         self.add_arg("arg1", msg="Repo first")
         self.end_required()

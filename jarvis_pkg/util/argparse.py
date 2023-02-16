@@ -19,6 +19,7 @@ class ArgParse(ABC):
         self.exit_on_fail = exit_on_fail
         self.menus = []
         self.vars = {}
+        self.remainder = None
         self.pos_required = True
         self.use_remainder = False
 
@@ -34,7 +35,7 @@ class ArgParse(ABC):
                  use_remainder=False):
         toks = []
         if name is not None:
-            toks = name.split('/')
+            toks = name.split()
         self.menus.append({
             'name_str': " ".join(toks),
             'name': toks,
@@ -137,6 +138,7 @@ class ArgParse(ABC):
                 break
         if self.menu is None:
             self._invalid_menu()
+        self.menu_name = self.menu['name_str']
         self.add_arg('-h',
                      default=None,
                      msg='print help message',

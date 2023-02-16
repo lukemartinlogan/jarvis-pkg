@@ -24,7 +24,7 @@ class JpkgManifestManager:
         self.repos = pd.DataFrame(columns=self.columns)
         self.jpkg = JpkgManager.get_instance()
         if os.path.exists(self.jpkg.manifest_path):
-            self.repos = pd.load_parquet(self.jpkg.manifest_path)
+            self.repos = pd.read_parquet(self.jpkg.manifest_path)
 
     def add_repo(self, repo_path):
         """
@@ -44,6 +44,15 @@ class JpkgManifestManager:
             for installer in installers:
                 pkg = self._load_pkg(repo, pkg_name, installer,
                                      repo_path=repo_path)
+                df = self.repos
+                df = df[
+                    (df.repo == repo) &
+                    (df.cls == pkg.cls) &
+                    (df.name == pkg_name) &
+                    (df.installer == installer)
+                ]
+                if len(df):
+                    continue
                 repos.append([repo, pkg.cls, pkg_name, installer, repo_path])
         self.repos = pd.concat([self.repos,
                                 pd.DataFrame(repos, columns=self.columns)])
@@ -62,11 +71,11 @@ class JpkgManifestManager:
     def list_repo(self, repo=None):
         """
         List all packages corresponding to a repo
-        
-        :param repo: 
-        :return: 
+
+        :param repo:
+        :return:
         """
-        
+
         df = self.repos
         if repo is not None:
             df = df[df.repo == repo]
