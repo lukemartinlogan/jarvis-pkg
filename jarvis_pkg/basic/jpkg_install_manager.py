@@ -156,6 +156,7 @@ class JpkgInstallManager:
         for pkg_state in pkgs:
             pkg = self.manifest.load_pkg_from_state(pkg_state)
             new_pkg = pkg.from_query(pkg_query)
+            new_pkg.set_state(pkg_state)
             new_pkg.is_installed = True
             if new_pkg is not None:
                 matches.append(new_pkg)
