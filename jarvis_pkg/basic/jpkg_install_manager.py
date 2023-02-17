@@ -14,6 +14,8 @@ from .jpkg_manager import JpkgManager
 from jarvis_pkg.util.system_info import SystemInfo
 from jarvis_pkg.query_parser.parse import QueryParser
 from jarvis_pkg.basic.jpkg_manifest_manager import JpkgManifestManager
+from jarvis_pkg.util.naming import to_camel_case
+from jarvis_pkg.basic.package_query import PackageQuery
 from .introspectable import Introspectable
 from tabulate import tabulate
 
@@ -70,17 +72,31 @@ class JpkgInstallManager:
             self._unregister_package(dep_pkg, False, full_uninstall)
 
     def introspect(self):
-        pkg_root = os.path.join(self.jpkg.jpkg_root, 'jarvs_pkg', 'installers')
-        pkg_types = os.listdir(pkg_root)
-        for pkg_type in pkg_types:
-            pkg = __import__(f"jarvis_pkg.installers.{pkg_type}")(True)
-            if isinstance(pkg, Introspectable):
-                queries = pkg.introspect()
-                for pkg_query in queries:
-                    matches = self.manifest.match(pkg_query)
-                    for pkg in matches:
-                        pkg.make_uuid(self.df['uuid'])
-                        self._register_package(pkg)
+        pkg_root = os.path.join(self.jpkg.jpkg_root, 'jarvis_pkg', 'installers')
+        installer_types = os.listdir(pkg_root)
+        for installer_type in installer_types:
+            if '.py' not in installer_type or '__init__.py' in installer_type:
+                continue
+            installer_type = installer_type.replace('.py', '')
+            class_name = to_camel_case(f"{installer_type}_installer")
+            module = __import__(f"jarvis_pkg.installers.{installer_type}",
+                                fromlist=[class_name])
+            installer = getattr(module, class_name)()
+            if isinstance(installer, Introspectable):
+                state = installer.get_introspect_state()
+                pkg_query = PackageQuery()
+                pkg_query.installer = installer.installer
+                pkg_query.is_null = False
+                pkgs = self.manifest.match(pkg_query)
+                for pkg in pkgs:
+                    new_pkg_query = pkg.introspect(state)
+                    if new_pkg_query is None:
+                        continue
+                    if self.exists(new_pkg_query):
+                        continue
+                    print(f"Introspecting {new_pkg_query}")
+                    pkg.make_uuid(self.df['uuid'])
+                    self._register_package(pkg)
 
     def install_spec(self, pkg_spec):
         main_pkg = pkg_spec.install_graph[-1]

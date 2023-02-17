@@ -4,11 +4,16 @@ import copy
 
 
 class PackageQuery:
-    def __init__(self, text=None):
+    def __init__(self, text=None,
+                 repo=None,
+                 cls=None,
+                 name=None,
+                 installer=None):
         self.manifest = JpkgManifestManager.get_instance()
-        self.repo = None
-        self.name = None
-        self.cls = None
+        self.repo = repo
+        self.name = name
+        self.cls = cls
+        self.installer = installer
         if text is not None and len(text):
             toks = text.split('.')
             if len(toks) == 1:
@@ -27,10 +32,17 @@ class PackageQuery:
         self.variants = {}      # a dict of keys -> variant options
         self.versions = []      # a list of Version ranges
         self.dependencies = {}  # a dict of PackageQuery
-        self.is_null = True
+        self.is_null = (text is None
+                        and repo is None
+                        and cls is None
+                        and name is None
+                        and installer is None)
 
     def intersect_version_range(self, min, max):
         self.versions.append((min, max))
+
+    def set_version(self, version):
+        self.versions.append((version, version))
 
     def intersect(self, other):
         new_query = copy.deepcopy(self)
@@ -106,4 +118,4 @@ class PackageQuery:
         return self.to_string()
 
     def to_string(self):
-        return f"{self.repo}.{self.cls}.{self.name}"
+        return f"{self.repo}.{self.cls}.{self.name}/{self.installer}"

@@ -30,6 +30,7 @@ class JarvisArgs(ArgParse):
         self.add_arg("--root", argtype=bool, default=False,
                      msg="Whether or not to support root installs")
         self.add_menu("list", use_remainder=True)
+        self.add_menu("introspect")
 
 
 if __name__ == '__main__':
@@ -73,3 +74,4 @@ if __name__ == '__main__':
             installer.list()
     elif args.menu_name == "introspect":
         installer.introspect()
+        installer.save()

@@ -39,6 +39,8 @@ class JpkgManifestManager:
         pkg_names = os.listdir(os.path.join(repo_path, repo))
         repos = []
         for pkg_name in pkg_names:
+            if '.py' in pkg_name or '__' in pkg_name:
+                continue
             pkg_dir = os.path.join(repo_path, repo, pkg_name)
             installers = os.listdir(pkg_dir)
             for installer in installers:
@@ -178,6 +180,8 @@ class JpkgManifestManager:
             df = df[df.cls == pkg_query.cls]
         if pkg_query.name is not None:
             df = df[df.name == pkg_query.name]
+        if pkg_query.installer is not None:
+            df = df[df.installer == pkg_query.installer]
         if len(df) == 0:
             return []
         pkg_names = list(df['name'])
