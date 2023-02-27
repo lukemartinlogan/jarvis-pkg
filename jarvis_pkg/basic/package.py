@@ -25,6 +25,7 @@ class Package(Installer):
 
         self.variants_ = {}
         self.dependencies_ = {}
+        self.versions_ = None
         self.version_ = None
         self.uuid_ = None
         self.is_installed = False
@@ -195,6 +196,7 @@ class Package(Installer):
         # Solidify version
         self.all_versions.sort(reverse=True,
                                key=lambda x: x['version'])
+        self.versions_ = pkg_query.versions.copy()
         for version_info in self.all_versions:
             version = version_info['version']
             if self._version_in_range(version, pkg_query.versions):

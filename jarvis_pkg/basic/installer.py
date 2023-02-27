@@ -35,10 +35,6 @@ class Installer(ABC):
                         self.uninstall_phases.append(value)
 
     @abstractmethod
-    def from_query(self, pkg_query):
-        pass
-
-    @abstractmethod
     def installer_requirements(self):
         """
         Any requirements of the system in order to use a package.

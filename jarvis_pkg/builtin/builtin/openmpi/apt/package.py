@@ -2,6 +2,8 @@ from jarvis_pkg.installers.apt import AptInstaller
 from jarvis_pkg.basic.package import Package, install, uninstall
 from jarvis_pkg.basic.package_query import PackageQuery
 from jarvis_pkg.basic.package_query_list import PackageQueryList
+from jarvis_pkg.basic.version import Version
+from itertools import product
 import re
 
 
@@ -10,7 +12,9 @@ class OpenmpiPackage(AptInstaller, Package):
         self.classify('mpi')
 
     def define_versions(self):
-        self.version('3.1.0')
+        self.version('inf')
+        for i, j, k in product(range(4), range(10), range(10)):
+            self.version(f"{i}.{j}.{k}")
 
     def define_variants(self):
         pass
@@ -26,6 +30,14 @@ class OpenmpiPackage(AptInstaller, Package):
 
     def unload_env(self):
         pass
+
+    def get_apt_packages(self):
+        if self.version_ == Version('inf'):
+            return [
+                'libopenmpi3', 'openmpi-bin'
+            ]
+        else:
+            return
 
     def introspect(self, state):
         return self._introspect_ubuntu20(state)
